@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .font-heading {
+        font-family: 'Manrope', sans-serif;
+    }
+    .gold-glow {
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+    }
+    .gold-text-gradient {
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-image: linear-gradient(to right, #D4AF37, #F3E5AB);
+    }
+}
+
+@layer base {
+    :root {
+        --background: 240 10% 3.9%;
+        --foreground: 0 0% 98%;
+        --card: 240 10% 9.8%;
+        --card-foreground: 0 0% 98%;
+        --popover: 240 10% 9.8%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 45 70% 52%;
+        --primary-foreground: 0 0% 0%;
+        --secondary: 240 5.9% 15.3%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 240 5.9% 15.3%;
+        --muted-foreground: 240 5% 64.9%;
+        --accent: 45 70% 52%;
+        --accent-foreground: 0 0% 0%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 240 5.9% 15.3%;
+        --input: 240 5.9% 15.3%;
+        --ring: 45 70% 52%;
+        --radius: 0.5rem;
+        --chart-1: 45 70% 52%;
+        --chart-2: 217 91% 60%;
+        --chart-3: 0 84% 60%;
+        --chart-4: 142 76% 36%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-[#09090b] text-zinc-100 antialiased;
+        font-family: 'Inter', sans-serif;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Manrope', sans-serif;
+    }
+}
+
+@layer base {
+    [data-debug-wrapper="true"] {
+        display: contents !important;
+    }
+
+    [data-debug-wrapper="true"] > * {
+        margin-left: inherit;
+        margin-right: inherit;
+        margin-top: inherit;
+        margin-bottom: inherit;
+        padding-left: inherit;
+        padding-right: inherit;
+        padding-top: inherit;
+        padding-bottom: inherit;
+        column-gap: inherit;
+        row-gap: inherit;
+        gap: inherit;
+        border-left-width: inherit;
+        border-right-width: inherit;
+        border-top-width: inherit;
+        border-bottom-width: inherit;
+        border-left-style: inherit;
+        border-right-style: inherit;
+        border-top-style: inherit;
+        border-bottom-style: inherit;
+        border-left-color: inherit;
+        border-right-color: inherit;
+        border-top-color: inherit;
+        border-bottom-color: inherit;
+    }
+}
