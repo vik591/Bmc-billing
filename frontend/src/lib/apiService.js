@@ -21,7 +21,7 @@ export const authAPI = {
 };
 
 // CUSTOMERS
-export const customersAPI = {
+export const customersApiService = {
   getAll: () => api.get('/customers'),
 };
 
