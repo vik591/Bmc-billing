@@ -32,6 +32,11 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 app = FastAPI()
+
+@app.get("/")
+def root():
+    return {"status": "running"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
