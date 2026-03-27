@@ -16,7 +16,7 @@ export const CustomersPage = () => {
 
   const fetchCustomers = async () => {
     try {
-      const response = await customersAPI.getAll();
+      const response = await customersApiService.getAll();
       setCustomers(response.data);
     } catch (error) {
       toast.error('Failed to load customers');
