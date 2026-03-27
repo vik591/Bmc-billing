@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { dashboardAPI, productsAPI, repairBillsAPI } from '../lib/apiservice';
+import { dashboardAPI, productsAPI, repairBillsAPI } from '../lib/apiService';
 import { Card } from '../components/ui/card';
 import { toast } from 'sonner';
 import { IndianRupee, TrendingUp, Package, AlertCircle, Wrench, ShoppingBag } from 'lucide-react';
