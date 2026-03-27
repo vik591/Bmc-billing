@@ -3,6 +3,7 @@ import { authAPI } from '../lib/apiService';
 
 const AuthContext = createContext(null);
 
+// ✅ Hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -11,51 +12,75 @@ export const useAuth = () => {
   return context;
 };
 
+// ✅ Provider
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // 🔄 Load user from localStorage
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    if (token && userData) {
-      setUser(JSON.parse(userData));
+    try {
+      const token = localStorage.getItem('token');
+      const userData = localStorage.getItem('user');
+
+      if (token && userData) {
+        setUser(JSON.parse(userData));
+      }
+    } catch (err) {
+      console.error("Error loading user:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
+  // 🔐 LOGIN
   const login = async (email, password) => {
-  try {
-    const response = await authAPI.login({ email, password });
+    try {
+      const response = await authAPI.login({ email, password });
 
-    localStorage.setItem('token', response.data.access_token);
+      const token = response.data.access_token;
 
-    const userData = { email };
+      // Save token
+      localStorage.setItem('token', token);
 
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
+      // Save user
+      const userData = { email };
+      localStorage.setItem('user', JSON.stringify(userData));
 
-  } catch (error) {
-    console.error("Login failed", error);
-    throw error;
-  }
-};
+      setUser(userData);
 
+      return { success: true };
+
+    } catch (error) {
+      console.error("Login failed:", error);
+      return {
+        success: false,
+        error: error.response?.data?.detail || "Login failed"
+      };
+    }
+  };
+
+  // 📝 REGISTER
   const register = async (data) => {
     try {
       await authAPI.register(data);
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.response?.data?.detail || 'Registration failed' };
+      return {
+        success: false,
+        error: error.response?.data?.detail || "Registration failed"
+      };
     }
   };
 
+  // 🚪 LOGOUT
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
   };
 
+  // ✅ RETURN (IMPORTANT)
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
