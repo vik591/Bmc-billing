@@ -43,7 +43,8 @@ export const dashboardAPI = {
 
 // REPAIR BILLS
 export const repairBillsAPI = {
-  getAll: () => api.get('/repair-bills'),};
+  getAll: () => api.get('/repair-bills'),
+};
 
 // PURCHASES
 export const purchasesAPI = {
