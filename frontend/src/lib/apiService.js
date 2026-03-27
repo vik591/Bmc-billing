@@ -38,8 +38,7 @@ export const emiAPI = {
 
 // DASHBOARD
 export const dashboardAPI = {
-  getStats: () => api.get('/dashboard'),
-};
+  getStats: () => api.get('/dashboard'),};
 
 // REPAIR BILLS
 export const repairBillsAPI = {
