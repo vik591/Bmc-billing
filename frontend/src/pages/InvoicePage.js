@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { productBillsAPI, settingsAPI } from '../lib/api';
+import { productBillsAPI, settingsAPI } from '../lib/apiservice';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
