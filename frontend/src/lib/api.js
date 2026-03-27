@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-console.log("ENV:", import.meta.env.VITE_API_URL);
-
+// correct for VITE
 const API_URL = import.meta.env.VITE_API_URL + '/api';
 
 const api = axios.create({
@@ -16,13 +15,13 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// AUTH
+//  AUTH
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
 };
 
-// CUSTOMERS
+//  CUSTOMERS (IMPORTANT)
 export const customersAPI = {
   getAll: () => api.get('/customers'),
 };
