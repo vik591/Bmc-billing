@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { repairBillsAPI } from '../lib/apiservice';
+import { repairBillsAPI } from '../lib/apiService';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
