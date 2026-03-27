@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { customersAPI } from '../lib/api';
+import { customersApiService } from '../lib/apiService';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
