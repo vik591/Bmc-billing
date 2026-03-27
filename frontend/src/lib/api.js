@@ -8,7 +8,6 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Token attach
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -23,15 +22,15 @@ export const authAPI = {
   login: (data) => api.post('/auth/login', data),
 };
 
+// ✅ CUSTOMERS (IMPORTANT)
+export const customersAPI = {
+  getAll: () => api.get('/customers'),
+};
+
 // ✅ PRODUCTS
 export const productsAPI = {
   getAll: () => api.get('/products'),
   create: (data) => api.post('/products', data),
-};
-
-// ✅ CUSTOMERS
-export const customersAPI = {
-  getAll: () => api.get('/customers'),
 };
 
 // ✅ EMI
