@@ -24,16 +24,22 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const userData = { email };
+  const login = async (email, password) => {
+  try {
+    const response = await authAPI.login({ email, password });
 
-  localStorage.setItem('user', JSON.stringify(userData));
-  setUser(userData);
+    localStorage.setItem('token', response.data.access_token);
+
+    const userData = { email };
+
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+
+  } catch (error) {
+    console.error("Login failed", error);
+    throw error;
+  }
 };
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.response?.data?.detail || 'Login failed' };
-    }
-  };
 
   const register = async (data) => {
     try {
