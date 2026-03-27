@@ -16,31 +16,26 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ✅ AUTH
+// AUTH
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
 };
 
-// ✅ CUSTOMERS (IMPORTANT)
+// CUSTOMERS
 export const customersAPI = {
   getAll: () => api.get('/customers'),
 };
 
-// ✅ PRODUCTS
+// PRODUCTS
 export const productsAPI = {
   getAll: () => api.get('/products'),
   create: (data) => api.post('/products', data),
 };
 
-// ✅ EMI
+// EMI
 export const emiAPI = {
   getAll: () => api.get('/emi'),
-};
-
-// ✅ REPORTS
-export const reportsAPI = {
-  getSales: (period) => api.get(`/reports/sales?period=${period}`),
 };
 
 export default api;
