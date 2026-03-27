@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { reportsAPI } from '../lib/api';
+import { reportsAPI } from '../lib/apiservice';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { toast } from 'sonner';
