@@ -56,6 +56,11 @@ export const purchasesAPI = {
   getAll: () => api.get('/purchases'),
 };
 
+// REPORTS
+export const reportsAPI = {
+  getAll: () => api.get('/reports'),
+};
+
 // SETTINGS
 export const settingsAPI = {
   get: () => api.get('/settings'),
