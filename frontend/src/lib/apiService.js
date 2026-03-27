@@ -31,6 +31,12 @@ export const productsAPI = {
   create: (data) => api.post('/products', data),
 };
 
+// PRODUCT BILLS
+export const productBillsAPI = {
+  getAll: () => api.get('/product-bills'),
+  create: (data) => api.post('/product-bills', data),
+};
+
 // EMI
 export const emiAPI = {
   getAll: () => api.get('/emi'),
