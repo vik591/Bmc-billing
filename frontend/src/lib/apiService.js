@@ -36,4 +36,29 @@ export const emiAPI = {
   getAll: () => api.get('/emi'),
 };
 
+// DASHBOARD
+export const dashboardAPI = {
+  getStats: () => api.get('/dashboard'),
+};
+
+// REPAIR BILLS
+export const repairBillsAPI = {
+  getAll: () => api.get('/repair-bills'),
+};
+
+// PURCHASES
+export const purchasesAPI = {
+  getAll: () => api.get('/purchases'),
+};
+
+// SETTINGS
+export const settingsAPI = {
+  get: () => api.get('/settings'),
+};
+
+// USERS
+export const usersAPI = {
+  getAll: () => api.get('/users'),
+};
+
 export default api;
