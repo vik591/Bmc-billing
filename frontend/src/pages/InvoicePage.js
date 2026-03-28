@@ -108,7 +108,7 @@ export const InvoicePage = () => {
         <div className="flex justify-between border-b pb-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold">Bharti Mobile Collection</h1>
-            <p>9993448128</p>
+            <p>Contact: 8982132343 / 9993448128</p>
             <p>
               Shop No. 17, Ultimate Plaza - 1,<br />
               Mandakini Square, Kolar Road,<br />
@@ -184,9 +184,25 @@ export const InvoicePage = () => {
           </div>
         </div>
 
+        {/* SIGNATURE */}
+        <div className="mt-12 flex justify-between items-end">
+          <div className="text-center">
+            <div className="border-t w-40 mx-auto mb-1"></div>
+            <p className="text-sm">Customer Signature</p>
+          </div>
+
+          <div className="text-center">
+            <div className="border-t w-40 mx-auto mb-1"></div>
+            <p className="text-sm font-semibold">For Bharti Mobile Collection</p>
+            <p className="text-xs text-gray-500">Authorized Signature</p>
+          </div>
+        </div>
+
         {/* FOOTER */}
         <div className="mt-8 border-t pt-4 text-sm">
-          <p className="text-center font-semibold">Thank you for shopping with Bharti Mobile Collection 🙏</p>
+          <p className="text-center font-semibold">
+            Thank you for shopping with Bharti Mobile Collection 🙏
+          </p>
 
           <div className="mt-4 text-xs">
             <p className="font-semibold mb-1">Terms & Conditions:</p>
