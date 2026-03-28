@@ -66,7 +66,7 @@ export const emiAPI = {
 
 // ================= DASHBOARD =================
 export const dashboardAPI = {
-   api.get('/dashboard/stats'),
+   getStats: () => api.get('/dashboard/stats'),
 };
 
 // ================= REPAIR =================
