@@ -3,7 +3,6 @@ import { authAPI } from '../lib/apiService';
 
 const AuthContext = createContext(null);
 
-// ✅ Hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -12,12 +11,10 @@ export const useAuth = () => {
   return context;
 };
 
-// ✅ Provider
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔄 Load user from localStorage
   useEffect(() => {
     try {
       const token = localStorage.getItem('token');
@@ -33,18 +30,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // 🔐 LOGIN
+  //LOGIN
   const login = async (email, password) => {
     try {
       const response = await authAPI.login({ email, password });
 
       const token = response.data.access_token;
+      const userData = response.data.user;
 
-      // Save token
       localStorage.setItem('token', token);
-
-      // Save user
-      const userData = { email };
       localStorage.setItem('user', JSON.stringify(userData));
 
       setUser(userData);
@@ -60,27 +54,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-// ✅ FULL USER FROM BACKEND
-    const userData = response.data.user;
-
-    // Save
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-
-    setUser(userData);
-
-    return { success: true };
-
-  } catch (error) {
-    console.error("Login failed:", error);
-    return {
-      success: false,
-      error: error.response?.data?.detail || "Login failed"
-    };
-  }
-};
-
-  // 📝 REGISTER
   const register = async (data) => {
     try {
       await authAPI.register(data);
@@ -93,14 +66,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 🚪 LOGOUT
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
   };
 
-  // ✅ RETURN (IMPORTANT)
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
