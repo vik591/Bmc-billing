@@ -79,23 +79,21 @@ const generate = async () => {
       total: total,
       payment_mode: "Cash",
 
-      customer_name: customerName || "",
-      customer_phone: customerPhone || ""
+      customer_name: "",   // 🔥 abhi empty rakh
+      customer_phone: ""   // 🔥 abhi empty rakh
     });
 
     alert("Bill Generated ✅");
+
     window.open(`/invoice/${res.data.id}`, "_blank");
+
     setCart([]);
 
   } catch (err) {
-    console.log("ERROR:", err.response?.data);
+    console.log("ERROR:", err.response?.data || err.message);
     alert(JSON.stringify(err.response?.data || err.message));
   }
 };
-
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl mb-4">Mobile Billing (IMEI)</h1>
 
       {/* SEARCH */}
       <Input
