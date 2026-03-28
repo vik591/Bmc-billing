@@ -25,9 +25,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error("API Error:", error.response?.data || error.message);
-    return Promise.reject(error);
-  }
+    console.error("FULL ERROR:", error.response);
+  alert(error.response?.data?.detail || "Login failed");
+  return { success: false };
 );
 
 //  AUTH
