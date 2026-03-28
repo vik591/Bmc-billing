@@ -390,12 +390,12 @@ async def create_product_bill(bill_data: ProductBillCreate, current_user: User =
     
     # Update product stock
     for item in bill_data.items:
-    imei1 = getattr(item, "imei1", None)
-    imei2 = getattr(item, "imei2", None)
+        imei1 = getattr(item, "imei1", None)
+        imei2 = getattr(item, "imei2", None)
 
-    await db.products.update_one(
-        {"id": item.product_id},
-        {"$inc": {"stock": -item.quantity}}
+        await db.products.update_one(
+            {"id": item.product_id},
+            {"$inc":{"stock":-item.quantity}}
     )
 
     # Update/Create customer
