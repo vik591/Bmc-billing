@@ -60,6 +60,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+// ✅ FULL USER FROM BACKEND
+    const userData = response.data.user;
+
+    // Save
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+
+    setUser(userData);
+
+    return { success: true };
+
+  } catch (error) {
+    console.error("Login failed:", error);
+    return {
+      success: false,
+      error: error.response?.data?.detail || "Login failed"
+    };
+  }
+};
+
   // 📝 REGISTER
   const register = async (data) => {
     try {
