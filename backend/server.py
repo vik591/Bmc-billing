@@ -37,7 +37,7 @@ app = FastAPI()
 
 @app.get("/")
 def root():
-return {"status": "running"}
+    return {"status": "running"}
 
 app.add_middleware(
 CORSMiddleware,
