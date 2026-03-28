@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 import uuid
 
-# ==================== INIT ====================
+# ==================== ENV ====================
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -23,7 +23,6 @@ db = client[os.environ['DB_NAME']]
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "secret")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
@@ -40,10 +39,6 @@ app.add_middleware(
 
 api_router = APIRouter(prefix="/api")
 
-@app.get("/")
-def root():
-    return {"status": "running"}
-
 # ==================== MODELS ====================
 
 class User(BaseModel):
@@ -59,72 +54,100 @@ class BillItem(BaseModel):
     price: float
     total: float
 
-    # 🔥 IMEI ADDED
+    # 🔥 IMEI SUPPORT
     imei1: Optional[str] = None
     imei2: Optional[str] = None
 
+class Product(BaseModel):
+    id: str
+    name: str
+    category: str
+    price: float
+    stock: int
 
 class ProductBillCreate(BaseModel):
     items: List[BillItem]
     subtotal: float
-    gst_rate: float = 0
-    gst_amount: float = 0
-    discount_type: str = "amount"
-    discount_value: float = 0
-    discount_amount: float = 0
+    gst_rate: float
+    gst_amount: float
+    discount_type: str
+    discount_value: float
+    discount_amount: float
     total: float
     payment_mode: str
-    customer_name: Optional[str] = None
-    customer_phone: Optional[str] = None
-
-
-class ProductBill(ProductBillCreate):
-    id: str
-    invoice_number: str
-    created_by: str
-    created_at: datetime
-
+    customer_name: Optional[str]
+    customer_phone: Optional[str]
 
 # ==================== AUTH ====================
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    return User(id="demo", email="demo", name="demo", role="admin")
+    return {"id": "test-user"}
 
 # ==================== ROUTES ====================
 
+@api_router.get("/")
+async def root():
+    return {"message": "API Running"}
+
+# ==================== PRODUCTS ====================
+
+@api_router.get("/products")
+async def get_products(current_user: dict = Depends(get_current_user)):
+    return await db.products.find({}, {"_id": 0}).to_list(1000)
+
+@api_router.post("/products")
+async def create_product(product: dict, current_user: dict = Depends(get_current_user)):
+    product["id"] = str(uuid.uuid4())
+    await db.products.insert_one(product)
+    return product
+
+@api_router.put("/products/{product_id}")
+async def update_product(product_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    await db.products.update_one({"id": product_id}, {"$set": data})
+    return {"msg": "updated"}
+
+@api_router.delete("/products/{product_id}")
+async def delete_product(product_id: str, current_user: dict = Depends(get_current_user)):
+    await db.products.delete_one({"id": product_id})
+    return {"msg": "deleted"}
+
+# ==================== BILL ====================
+
 @api_router.post("/product-bills")
-async def create_bill(data: ProductBillCreate, user: User = Depends(get_current_user)):
-    invoice = f"INV-{str(uuid.uuid4())[:6]}"
-    bill = {
-        "id": str(uuid.uuid4()),
-        "invoice_number": invoice,
-        "created_by": user.id,
-        "created_at": datetime.now(timezone.utc),
-        **data.model_dump()
-    }
+async def create_bill(data: ProductBillCreate, current_user: dict = Depends(get_current_user)):
+    
+    bill = data.model_dump()
+    bill["id"] = str(uuid.uuid4())
+    bill["invoice_number"] = f"INV-{str(uuid.uuid4())[:6]}"
+    bill["created_at"] = datetime.now(timezone.utc).isoformat()
+
     await db.product_bills.insert_one(bill)
+
     return bill
 
+@api_router.get("/product-bills")
+async def get_bills(current_user: dict = Depends(get_current_user)):
+    return await db.product_bills.find({}, {"_id": 0}).to_list(100)
 
-@api_router.get("/product-bills/{bill_id}")
-async def get_bill(bill_id: str, user: User = Depends(get_current_user)):
-    bill = await db.product_bills.find_one({"id": bill_id}, {"_id": 0})
-    if not bill:
-        raise HTTPException(status_code=404)
-    return bill
+# ==================== CUSTOMERS ====================
 
+@api_router.get("/customers")
+async def get_customers(current_user: dict = Depends(get_current_user)):
+    return await db.customers.find({}, {"_id": 0}).to_list(1000)
 
-@api_router.get("/customers/{phone}/history")
-async def get_customer_history(phone: str, user: User = Depends(get_current_user)):
-    product_bills = await db.product_bills.find({"customer_phone": phone}, {"_id": 0}).to_list(100)
-    repair_bills = await db.repair_bills.find({"customer_phone": phone}, {"_id": 0}).to_list(100)
+# ==================== DASHBOARD ====================
 
-    for bill in product_bills:
-        if isinstance(bill.get('created_at'), str):
-            bill['created_at'] = datetime.fromisoformat(bill['created_at'])
+@api_router.get("/dashboard/stats")
+async def dashboard(current_user: dict = Depends(get_current_user)):
+    return {
+        "today_sales": 0,
+        "monthly_sales": 0,
+        "total_products_sold": 0,
+        "pending_payments": 0,
+        "repair_orders_in_progress": 0,
+        "low_stock_products": 0
+    }
 
-    for bill in repair_bills:
-        if isinstance(bill.get('created_at'), str):
-            bill['created_at'] = datetime.fromisoformat(bill['created_at'])
-        if isinstance(bill.get('updated_at'), str):
-            bill
+# ==================== FINAL ====================
+
+app.include_router(api_router)
