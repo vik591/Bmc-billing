@@ -6,16 +6,20 @@ import { Card } from '../components/ui/card';
 import { BarcodeScanner } from '../components/BarcodeScanner';
 
 export const ProductBillingPage = () => {
-  const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([]);
   const [cart, setCart] = useState([]);
+
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [paymentMode, setPaymentMode] = useState("Cash");
+
+  const [gstRate, setGstRate] = useState(0);
+  const [discountType, setDiscountType] = useState("amount");
+  const [discountValue, setDiscountValue] = useState(0);
+
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scanTarget, setScanTarget] = useState(null);
-
-  useEffect(() => {
-    productsAPI.getAll().then(res => setProducts(res.data));
-  }, []);
 
   const searchProducts = async (q) => {
     if (!q) return setResults([]);
@@ -33,8 +37,8 @@ export const ProductBillingPage = () => {
       imei1: '',
       imei2: ''
     }]);
-    setResults([]);
     setSearch('');
+    setResults([]);
   };
 
   const update = (id, field, value) => {
@@ -60,7 +64,14 @@ export const ProductBillingPage = () => {
     setScannerOpen(false);
   };
 
-  const total = cart.reduce((s, i) => s + i.total, 0);
+  const subtotal = cart.reduce((s, i) => s + i.total, 0);
+  const gstAmount = (subtotal * gstRate) / 100;
+  const discountAmount =
+    discountType === "percentage"
+      ? (subtotal * discountValue) / 100
+      : discountValue;
+
+  const finalTotal = subtotal + gstAmount - discountAmount;
 
   const generate = async () => {
     try {
@@ -74,16 +85,16 @@ export const ProductBillingPage = () => {
           imei1: i.imei1 || "",
           imei2: i.imei2 || ""
         })),
-        subtotal: total,
-        gst_rate: 0,
-        gst_amount: 0,
-        discount_type: "amount",
-        discount_value: 0,
-        discount_amount: 0,
-        total: total,
-        payment_mode: "Cash",
-        customer_name: "",
-        customer_phone: ""
+        subtotal,
+        gst_rate: gstRate,
+        gst_amount: gstAmount,
+        discount_type: discountType,
+        discount_value: discountValue,
+        discount_amount: discountAmount,
+        total: finalTotal,
+        payment_mode: paymentMode,
+        customer_name: customerName || "Walk-in Customer",
+        customer_phone: customerPhone || ""
       });
 
       alert("Bill Generated ✅");
@@ -91,7 +102,7 @@ export const ProductBillingPage = () => {
       setCart([]);
 
     } catch (err) {
-      console.log("ERROR:", err.response?.data || err.message);
+      console.log(err);
       alert("Bill Failed ❌");
     }
   };
@@ -112,14 +123,43 @@ export const ProductBillingPage = () => {
       />
 
       {results.map(p => (
-        <div
-          key={p.id}
-          onClick={() => addToCart(p)}
-          className="cursor-pointer"
-        >
+        <div key={p.id} onClick={() => addToCart(p)}>
           {p.name} ₹{p.price}
         </div>
       ))}
+
+      {/* CUSTOMER */}
+      <div className="mt-4 space-y-2">
+        <Input placeholder="Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+        <Input placeholder="Customer Phone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+
+        <select
+          className="border p-2 w-full"
+          value={paymentMode}
+          onChange={(e) => setPaymentMode(e.target.value)}
+        >
+          <option value="Cash">Cash</option>
+          <option value="UPI">UPI</option>
+          <option value="Card">Card</option>
+          <option value="EMI">EMI</option>
+        </select>
+      </div>
+
+      {/* GST + DISCOUNT */}
+      <div className="mt-4 space-y-2">
+        <Input type="number" placeholder="GST %" value={gstRate} onChange={(e) => setGstRate(Number(e.target.value))} />
+
+        <select
+          className="border p-2 w-full"
+          value={discountType}
+          onChange={(e) => setDiscountType(e.target.value)}
+        >
+          <option value="amount">Discount ₹</option>
+          <option value="percentage">Discount %</option>
+        </select>
+
+        <Input type="number" placeholder="Discount" value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} />
+      </div>
 
       {/* CART */}
       {cart.map((i, index) => (
@@ -128,69 +168,37 @@ export const ProductBillingPage = () => {
           <h2>{i.product_name}</h2>
 
           <div className="flex gap-2">
-            <Input
-              value={i.quantity}
-              onChange={(e) =>
-                update(i.product_id, 'quantity', Number(e.target.value))
-              }
-            />
-            <Input
-              value={i.price}
-              onChange={(e) =>
-                update(i.product_id, 'price', Number(e.target.value))
-              }
-            />
+            <Input value={i.quantity} onChange={(e) => update(i.product_id, 'quantity', Number(e.target.value))} />
+            <Input value={i.price} onChange={(e) => update(i.product_id, 'price', Number(e.target.value))} />
           </div>
 
-          {/* IMEI 1 */}
           <div className="flex gap-2 mt-2">
-            <Input
-              placeholder="IMEI 1"
-              value={i.imei1}
-              onChange={(e) =>
-                update(i.product_id, 'imei1', e.target.value)
-              }
-            />
-            <Button
-              onClick={() => {
-                setScanTarget({ id: i.product_id, field: 'imei1' });
-                setScannerOpen(true);
-              }}
-            >
-              Scan
-            </Button>
+            <Input placeholder="IMEI 1" value={i.imei1} onChange={(e) => update(i.product_id, 'imei1', e.target.value)} />
+            <Button onClick={() => { setScanTarget({ id: i.product_id, field: 'imei1' }); setScannerOpen(true); }}>Scan</Button>
           </div>
 
-          {/* IMEI 2 */}
           <div className="flex gap-2 mt-2">
-            <Input
-              placeholder="IMEI 2"
-              value={i.imei2}
-              onChange={(e) =>
-                update(i.product_id, 'imei2', e.target.value)
-              }
-            />
-            <Button
-              onClick={() => {
-                setScanTarget({ id: i.product_id, field: 'imei2' });
-                setScannerOpen(true);
-              }}
-            >
-              Scan
-            </Button>
+            <Input placeholder="IMEI 2" value={i.imei2} onChange={(e) => update(i.product_id, 'imei2', e.target.value)} />
+            <Button onClick={() => { setScanTarget({ id: i.product_id, field: 'imei2' }); setScannerOpen(true); }}>Scan</Button>
           </div>
 
           <p className="mt-2 font-bold">₹{i.total}</p>
+
         </Card>
       ))}
 
-      <h2 className="mt-4">Total: ₹{total}</h2>
+      {/* TOTAL */}
+      <div className="mt-4">
+        <div>Subtotal: ₹{subtotal}</div>
+        <div>GST: ₹{gstAmount}</div>
+        <div>Discount: ₹{discountAmount}</div>
+        <div className="font-bold">Final Total: ₹{finalTotal}</div>
+      </div>
 
       <Button onClick={generate} className="mt-4">
         Generate Bill
       </Button>
 
-      {/* SCANNER */}
       {scannerOpen && (
         <BarcodeScanner
           onScanSuccess={handleScan}
