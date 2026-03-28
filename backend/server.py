@@ -24,7 +24,7 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-JWT Configuration
+#JWT Configuration
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
@@ -50,7 +50,7 @@ api_router = APIRouter(prefix="/api")
 
 ==================== MODELS ====================
 
-User Models
+#User Models
 
 class UserCreate(BaseModel):
 email: EmailStr
@@ -75,7 +75,7 @@ access_token: str
 token_type: str
 user: User
 
-Product Models
+#Product Models
 
 class ProductCreate(BaseModel):
 name: str
@@ -140,7 +140,7 @@ customer_phone: Optional[str] = None
 created_by: str
 created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-Repair Bill Models
+#Repair Bill Models
 
 class RepairBillCreate(BaseModel):
 customer_name: str
@@ -169,7 +169,7 @@ created_by: str
 created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-Customer Models
+#Customer Models
 
 class Customer(BaseModel):
 model_config = ConfigDict(extra="ignore")
@@ -180,7 +180,7 @@ email: Optional[str] = None
 total_purchases: float = 0
 last_visit: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-EMI Models
+#EMI Models
 
 class EMICreate(BaseModel):
 customer_name: str
@@ -211,7 +211,7 @@ class EMIPayment(BaseModel):
 emi_id: str
 amount: float
 
-Shop Settings Models
+#Shop Settings Models
 
 class ShopSettingsUpdate(BaseModel):
 shop_name: Optional[str] = None
@@ -232,7 +232,7 @@ upi_id: Optional[str] = None
 logo_base64: Optional[str] = None
 updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-Purchase Entry Models
+#Purchase Entry Models
 
 class PurchaseCreate(BaseModel):
 product_id: str
@@ -251,7 +251,7 @@ total_cost: float
 supplier_name: Optional[str] = None
 created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-Dashboard Stats Model
+#Dashboard Stats Model
 
 class DashboardStats(BaseModel):
 today_sales: float
@@ -301,7 +301,7 @@ return User(**user_doc)
 async def root():
 return {"message": "Bharti Mobile Collection API"}
 
-Auth Routes
+#Auth Routes
 
 @api_router.post("/auth/register", response_model=User)
 async def register(user_data: UserCreate):
@@ -337,7 +337,7 @@ access_token = create_access_token(data={"sub": user.id})
   
 return Token(access_token=access_token, token_type="bearer", user=user)
 
-Product Routes
+#Product Routes
 
 @api_router.post("/products", response_model=Product)
 async def create_product(product: ProductCreate, current_user: User = Depends(get_current_user)):
@@ -398,7 +398,7 @@ if result.deleted_count == 0:
 raise HTTPException(status_code=404, detail="Product not found")
 return {"message": "Product deleted successfully"}
 
-Product Bills Routes
+#Product Bills Routes
 
 @api_router.post("/product-bills", response_model=ProductBill)
 async def create_product_bill(bill_data: ProductBillCreate, current_user: User = Depends(get_current_user)):
@@ -462,7 +462,7 @@ if isinstance(bill.get('created_at'), str):
 bill['created_at'] = datetime.fromisoformat(bill['created_at'])
 return ProductBill(**bill)
 
-Repair Bills Routes
+#Repair Bills Routes
 
 @api_router.post("/repair-bills", response_model=RepairBill)
 async def create_repair_bill(bill_data: RepairBillCreate, current_user: User = Depends(get_current_user)):
@@ -532,7 +532,7 @@ await db.repair_bills.update_one(
 )  
 return {"message": "Payment added successfully"}
 
-Customer Routes
+#Customer Routes
 
 @api_router.get("/customers", response_model=List[Customer])
 async def get_customers(current_user: User = Depends(get_current_user)):
