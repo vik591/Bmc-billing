@@ -88,8 +88,11 @@ class BillItem(BaseModel):
     quantity: int
     price: float
     total: float
+
     imei1: Optional[str] = None
     imei2: Optional[str] = None
+
+    model_config = ConfigDict(extra="ignore")
 
 class ProductBillCreate(BaseModel):
     items: List[BillItem]
