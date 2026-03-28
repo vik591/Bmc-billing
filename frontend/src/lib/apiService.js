@@ -3,6 +3,7 @@ import axios from "axios";
 // ✅ API URL (fallback bhi diya hai)
 const API_URL =
   (process.env.REACT_APP_API_URL || "https://bmc-billing.onrender.com") + "/api";
+console.log("API URL:", API_URL);
 
 // ✅ Axios instance
 const api = axios.create({
