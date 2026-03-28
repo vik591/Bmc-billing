@@ -20,7 +20,7 @@ mongo_url = os.environ["MONGO_URL"]
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ["DB_NAME"]]
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "secret")
+SECRET_KEY = os.environ.get("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 
@@ -45,12 +45,57 @@ api_router = APIRouter(prefix="/api")
 
 # ==================== MODELS ====================
 
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    role: Literal["admin", "staff"] = "staff"
+
+
 class User(BaseModel):
-    id: str
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: str
     name: str
-    role: str
+    role: Literal["admin", "staff"]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user: User
+
+
+class ProductCreate(BaseModel):
+    name: str
+    category: str
+    price: float
+    cost_price: float = 0
+    stock: int = 0
+    low_stock_threshold: int = 5
+    barcode: Optional[str] = None
+
+
+class Product(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    category: str
+    price: float
+    cost_price: float
+    stock: int
+    low_stock_threshold: int
+    barcode: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+# 🔥 FIXED PART
 class BillItem(BaseModel):
     product_id: str
     product_name: str
@@ -60,80 +105,111 @@ class BillItem(BaseModel):
     imei1: Optional[str] = None
     imei2: Optional[str] = None
 
+
 class ProductBillCreate(BaseModel):
     items: List[BillItem]
     subtotal: float
+    gst_rate: float = 0
+    gst_amount: float = 0
+    discount_type: Literal["amount", "percentage"] = "amount"
+    discount_value: float = 0
+    discount_amount: float = 0
     total: float
-    payment_mode: str
+    payment_mode: Literal["Cash", "UPI", "Card", "EMI"]
     customer_name: Optional[str] = None
     customer_phone: Optional[str] = None
 
+
 class ProductBill(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     invoice_number: str
     items: List[BillItem]
     subtotal: float
+    gst_rate: float
+    gst_amount: float
+    discount_type: str
+    discount_value: float
+    discount_amount: float
     total: float
     payment_mode: str
-    customer_name: Optional[str]
-    customer_phone: Optional[str]
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
     created_by: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
 # ==================== AUTH ====================
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    to_encode.update({"exp": datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)})
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
-    try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
 
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
-    if not user:
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
+    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if user_doc is None:
         raise HTTPException(status_code=401, detail="User not found")
 
-    return User(**user)
+    if isinstance(user_doc.get("created_at"), str):
+        user_doc["created_at"] = datetime.fromisoformat(user_doc["created_at"])
+
+    return User(**user_doc)
+
 
 # ==================== ROUTES ====================
+
+@api_router.get("/")
+async def root():
+    return {"message": "Bharti Mobile Collection API"}
+
 
 @api_router.get("/products")
 async def get_products(current_user: User = Depends(get_current_user)):
     return await db.products.find({}, {"_id": 0}).to_list(1000)
 
+
 @api_router.get("/customers")
 async def get_customers(current_user: User = Depends(get_current_user)):
     return await db.customers.find({}, {"_id": 0}).to_list(1000)
 
-@api_router.get("/dashboard/stats")
-async def dashboard(current_user: User = Depends(get_current_user)):
-    return {
-        "today_sales": 0,
-        "monthly_sales": 0,
-        "total_products_sold": 0,
-        "pending_payments": 0,
-        "repair_orders_in_progress": 0,
-        "low_stock_products": 0
-    }
 
 @api_router.post("/product-bills")
-async def create_bill(bill: ProductBillCreate, current_user: User = Depends(get_current_user)):
+async def create_product_bill(bill_data: ProductBillCreate, current_user: User = Depends(get_current_user)):
     count = await db.product_bills.count_documents({})
-    invoice = f"INV-{count+1:06d}"
+    invoice_number = f"INV-{count + 1:06d}"
 
-    new_bill = ProductBill(
-        invoice_number=invoice,
+    bill = ProductBill(
+        invoice_number=invoice_number,
         created_by=current_user.id,
-        **bill.model_dump()
+        **bill_data.model_dump()
     )
 
-    await db.product_bills.insert_one(new_bill.model_dump())
-    return new_bill
+    bill_dict = bill.model_dump()
+    bill_dict["created_at"] = bill_dict["created_at"].isoformat()
+
+    await db.product_bills.insert_one(bill_dict)
+    return bill
+
 
 # ==================== FINAL ====================
 app.include_router(api_router)
