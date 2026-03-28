@@ -94,6 +94,12 @@ const generate = async () => {
     alert(JSON.stringify(err.response?.data || err.message));
   }
 };
+return (
+  <>
+    <div>...</div>
+    <div>...</div>
+  </>
+);
 
       {/* SEARCH */}
       <Input
