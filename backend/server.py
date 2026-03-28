@@ -167,4 +167,52 @@ async def login(u: UserLogin):
 
 @api_router.post("/products")
 async def add_product(p: ProductCreate, user: User = Depends(get_user)):
-    prod =
+    prod = Product(**p.model_dump())
+    d = prod.model_dump()
+    d["created_at"] = d["created_at"].isoformat()
+    await db.products.insert_one(d)
+    return prod
+
+@api_router.get("/products")
+async def get_products(user: User = Depends(get_user)):
+    return await db.products.find({}, {"_id": 0}).to_list(1000)
+
+@api_router.post("/product-bills")
+async def create_bill(b: ProductBillCreate, user: User = Depends(get_user)):
+    count = await db.product_bills.count_documents({})
+    invoice = f"INV-{count+1:06d}"
+    bill = ProductBill(invoice_number=invoice, **b.model_dump())
+    await db.product_bills.insert_one(bill.model_dump())
+
+    for i in b.items:
+        await db.products.update_one({"id": i.product_id}, {"$inc": {"stock": -i.quantity}})
+
+    if b.customer_phone:
+        await db.customers.update_one(
+            {"phone": b.customer_phone},
+            {"$set": {"name": b.customer_name}},
+            upsert=True
+        )
+
+    return bill
+
+@api_router.get("/product-bills")
+async def get_bills(user: User = Depends(get_user)):
+    return await db.product_bills.find({}, {"_id": 0}).to_list(100)
+
+@api_router.get("/customers")
+async def get_customers(user: User = Depends(get_user)):
+    return await db.customers.find({}, {"_id": 0}).to_list(1000)
+
+@api_router.get("/dashboard/stats")
+async def dashboard(user: User = Depends(get_user)):
+    return {
+        "today_sales": 0,
+        "monthly_sales": 0,
+        "total_products_sold": 0,
+        "pending_payments": 0,
+        "repair_orders_in_progress": 0,
+        "low_stock_products": 0
+    }
+
+app.include_router(api_router)
