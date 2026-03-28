@@ -172,22 +172,37 @@ return (
       ))}
 
       {/* CART */}
-      {cart.map(item => (
-        <Card key={item.product_id} className="p-4 mt-3">
-          <p>{item.product_name}</p>
+{cart.map((i, index) => (
+  <div key={index} className="border p-3 mb-3 rounded">
 
-          <div className="grid grid-cols-2 gap-2">
-            <Input
-              type="number"
-              value={item.quantity}
-              onChange={(e) => update(item.product_id, 'quantity', +e.target.value)}
-            />
-            <Input
-              type="number"
-              value={item.price}
-              onChange={(e) => update(item.product_id, 'price', +e.target.value)}
-            />
-          </div>
+    <h2>{i.name}</h2>
+
+    <input
+      value={i.quantity}
+      className="border p-1 mr-2"
+    />
+
+    <input
+      value={i.price}
+      className="border p-1"
+    />
+
+    <input
+      placeholder="IMEI 1"
+      value={i.imei1 || ""}
+      className="border p-2 w-full mt-2"
+    />
+
+    <input
+      placeholder="IMEI 2"
+      value={i.imei2 || ""}
+      className="border p-2 w-full mt-2"
+    />
+
+    <div>₹{i.total}</div>
+
+  </div>
+))}
 
           {/* IMEI 1 */}
           <div className="flex gap-2 mt-2">
