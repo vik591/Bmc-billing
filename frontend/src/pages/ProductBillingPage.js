@@ -59,7 +59,7 @@ const generate = async () => {
     const res = await productBillsAPI.create({
       items: cart.map(i => ({
         product_id: i.product_id || i.id,
-        product_name: i.name,
+        product_name: i.product_name,
         quantity: i.quantity,
         price: i.price,
         total: i.total,
@@ -98,48 +98,18 @@ const generate = async () => {
 return (
   <div className="p-6">
 
-    {/* 🔹 HEADER */}
-    <h1 className="text-2xl mb-4">Mobile Billing (IMEI)</h1>
+    <h1>Mobile Billing (IMEI)</h1>
 
-    {/* 🔹 SEARCH */}
-    <input
-      placeholder="Search product"
-      className="border p-2 w-full mb-4"
-    />
+    <input ... />
 
-    {/* 🔹 CART ITEMS */}
-    {cart.map((i, index) => (
-      <div key={index} className="border p-3 mb-3 rounded">
+    {cart.map(...)}   ✅
 
-        <h2>{i.name}</h2>
+    <div>Total: ₹{total}</div>
 
-        <div className="flex gap-2">
-          <input
-            value={i.quantity}
-            className="border p-1 w-20"
-          />
-          <input
-            value={i.price}
-            className="border p-1 w-20"
-          />
-        </div>
+    <button onClick={generate}>Generate Bill</button>
 
-        <input
-          placeholder="IMEI 1"
-          value={i.imei1 || ""}
-          className="border p-2 w-full mt-2"
-        />
-
-        <input
-          placeholder="IMEI 2"
-          value={i.imei2 || ""}
-          className="border p-2 w-full mt-2"
-        />
-
-        <div>₹{i.total}</div>
-
-      </div>
-    ))}
+  </div>
+);
 
     {/* 🔹 TOTAL */}
     <div className="mt-4 text-lg">Total: ₹{total}</div>
@@ -175,7 +145,7 @@ return (
 {cart.map((i, index) => (
   <div key={index} className="border p-3 mb-3 rounded">
 
-    <h2>{i.name}</h2>
+    <h2>{i.product_name}</h2>
 
     <input
       value={i.quantity}
