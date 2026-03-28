@@ -18,7 +18,7 @@ import base64
 ROOT_DIR = Path(file).parent
 load_dotenv(ROOT_DIR / '.env')
 
-MongoDB connection
+#MongoDB connection
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -98,7 +98,7 @@ low_stock_threshold: int
 barcode: Optional[str] = None
 created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-Product Bill Models
+#Product Bill Models
 
 class BillItem(BaseModel):
 product_id: str
