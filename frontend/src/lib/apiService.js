@@ -59,7 +59,9 @@ export const productsAPI = {
 // ================= PRODUCT BILLS =================
 export const productBillsAPI = {
   getAll: () => api.get("/product-bills"),
+getById: (id) => api.get(`/product-bills/${id}`),
   create: (data) => api.post("/product-bills", data),
+
 };
 
 // ================= EMI =================
