@@ -94,11 +94,65 @@ const generate = async () => {
     alert(JSON.stringify(err.response?.data || err.message));
   }
 };
+
 return (
-  <>
-    <div>...</div>
-    <div>...</div>
-  </>
+  <div className="p-6">
+
+    {/* 🔹 HEADER */}
+    <h1 className="text-2xl mb-4">Mobile Billing (IMEI)</h1>
+
+    {/* 🔹 SEARCH */}
+    <input
+      placeholder="Search product"
+      className="border p-2 w-full mb-4"
+    />
+
+    {/* 🔹 CART ITEMS */}
+    {cart.map((i, index) => (
+      <div key={index} className="border p-3 mb-3 rounded">
+
+        <h2>{i.name}</h2>
+
+        <div className="flex gap-2">
+          <input
+            value={i.quantity}
+            className="border p-1 w-20"
+          />
+          <input
+            value={i.price}
+            className="border p-1 w-20"
+          />
+        </div>
+
+        <input
+          placeholder="IMEI 1"
+          value={i.imei1 || ""}
+          className="border p-2 w-full mt-2"
+        />
+
+        <input
+          placeholder="IMEI 2"
+          value={i.imei2 || ""}
+          className="border p-2 w-full mt-2"
+        />
+
+        <div>₹{i.total}</div>
+
+      </div>
+    ))}
+
+    {/* 🔹 TOTAL */}
+    <div className="mt-4 text-lg">Total: ₹{total}</div>
+
+    {/* 🔹 BUTTON */}
+    <button
+      onClick={generate}
+      className="bg-yellow-500 px-4 py-2 mt-3 rounded"
+    >
+      Generate Bill
+    </button>
+
+  </div>
 );
 
       {/* SEARCH */}
