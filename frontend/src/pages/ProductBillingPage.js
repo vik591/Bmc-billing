@@ -54,24 +54,37 @@ export const ProductBillingPage = () => {
 
   const total = cart.reduce((s, i) => s + i.total, 0);
 
-  const generate = async () => {
+const generate = async () => {
+  try {
     const res = await productBillsAPI.create({
       items: cart.map(i => ({
         product_id: i.product_id,
+        product_name: i.name,   // 🔥 important
         quantity: i.quantity,
         price: i.price,
         total: i.total,
-        imei1: i.imei1 || null,
-        imei2: i.imei2 || null
+        imei1: i.imei1 || "",
+        imei2: i.imei2 || ""
       })),
+
       subtotal: total,
-      total,
-      payment_mode: 'Cash'
+      total: total,
+      payment_mode: "Cash",
+
+      customer_name: customerName || "",
+      customer_phone: customerPhone || ""
     });
 
-    window.open(`/invoice/${res.data.id}`, '_blank');
+    alert("Bill Generated ✅");
+
+    window.open(`/invoice/${res.data.id}`, "_blank");
     setCart([]);
-  };
+
+  } catch (err) {
+    console.log("ERROR:", err.response?.data || err.message);
+    alert("Bill Failed ❌");
+  }
+};
 
   return (
     <div className="p-6">
