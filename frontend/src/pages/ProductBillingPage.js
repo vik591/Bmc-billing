@@ -58,8 +58,8 @@ const generate = async () => {
   try {
     const res = await productBillsAPI.create({
       items: cart.map(i => ({
-        product_id: i.product_id,
-        product_name: i.name,   // 🔥 important
+        product_id: i.product_id || i.id,
+        product_name: i.name,
         quantity: i.quantity,
         price: i.price,
         total: i.total,
@@ -68,6 +68,14 @@ const generate = async () => {
       })),
 
       subtotal: total,
+
+      gst_rate: 0,
+      gst_amount: 0,
+
+      discount_type: "amount",
+      discount_value: 0,
+      discount_amount: 0,
+
       total: total,
       payment_mode: "Cash",
 
@@ -76,13 +84,12 @@ const generate = async () => {
     });
 
     alert("Bill Generated ✅");
-
     window.open(`/invoice/${res.data.id}`, "_blank");
     setCart([]);
 
   } catch (err) {
-    console.log("ERROR:", err.response?.data || err.message);
-    alert("Bill Failed ❌");
+    console.log("ERROR:", err.response?.data);
+    alert(JSON.stringify(err.response?.data || err.message));
   }
 };
 
