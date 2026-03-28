@@ -1,23 +1,39 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL + '/api';
+const API_URL =
+  (process.env.REACT_APP_API_URL || "https://bmc-billing.onrender.com") + "/api";
 
 const api = axios.create({
   baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
+//  Token attach
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
-// AUTH
+//  Error handle (IMPORTANT)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error("API Error:", error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
+
+//  AUTH
 export const authAPI = {
-  register: (data) => api.post('/auth/register', data),
-  login: (data) => api.post('/auth/login', data),
+  register: (data) => api.post("/auth/register", data),
+  login: (data) => api.post("/auth/login", data),
 };
 
 // CUSTOMERS
