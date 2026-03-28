@@ -397,7 +397,7 @@ async def create_product_bill(bill_data: ProductBillCreate, current_user: User =
         {"id": item.product_id},
         {"$inc": {"stock": -item.quantity}}
     )
-    
+
     # Update/Create customer
     if bill_data.customer_phone:
         customer_doc = await db.customers.find_one({"phone": bill_data.customer_phone})
