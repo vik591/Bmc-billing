@@ -51,6 +51,9 @@ export const customersApiService = {
 export const productsAPI = {
   getAll: () => api.get("/products"),
   create: (data) => api.post("/products", data),
+
+  // ✅ SEARCH
+  search: (query) => api.get(`/products/search?q=${query}`),
 };
 
 // ================= PRODUCT BILLS =================
