@@ -107,9 +107,13 @@ export const InvoicePage = () => {
         {/* HEADER */}
         <div className="flex justify-between border-b pb-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{settings.shop_name}</h1>
-            <p>{settings.contact_number}</p>
-            <p>{settings.address}</p>
+            <h1 className="text-2xl font-bold">Bharti Mobile Collection</h1>
+            <p>9993448128</p>
+            <p>
+              Shop No. 17, Ultimate Plaza - 1,<br />
+              Mandakini Square, Kolar Road,<br />
+              Bhopal (M.P)
+            </p>
           </div>
 
           <div className="text-right">
@@ -181,12 +185,22 @@ export const InvoicePage = () => {
         </div>
 
         {/* FOOTER */}
-        <div className="mt-8 border-t pt-4 text-center text-sm">
-          <p>Thank you for your business 🙏</p>
-          <p className="mt-2">No return after purchase</p>
+        <div className="mt-8 border-t pt-4 text-sm">
+          <p className="text-center font-semibold">Thank you for shopping with Bharti Mobile Collection 🙏</p>
+
+          <div className="mt-4 text-xs">
+            <p className="font-semibold mb-1">Terms & Conditions:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Goods once sold will not be taken back or exchanged.</li>
+              <li>No warranty on physical damage.</li>
+              <li>Please keep the invoice safe for warranty claims.</li>
+              <li>Warranty as per brand/service center policy.</li>
+              <li>All disputes subject to Bhopal jurisdiction.</li>
+            </ul>
+          </div>
 
           {settings.upi_id && (
-            <p className="mt-2">UPI: {settings.upi_id}</p>
+            <p className="mt-4 text-center">UPI: {settings.upi_id}</p>
           )}
         </div>
 
