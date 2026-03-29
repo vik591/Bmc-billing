@@ -80,34 +80,6 @@ setCart([
         item.product_id === productId
           ? { ...item, quantity: newQuantity, total: item.price * newQuantity }
           : item
-{/* 🔥 IMEI INPUTS */}
-<div className="mt-3 space-y-2">
-  <Input
-    placeholder="IMEI 1"
-    value={item.imei1 || ""}
-    onChange={(e) =>
-      setCart(cart.map(i =>
-        i.product_id === item.product_id
-          ? { ...i, imei1: e.target.value }
-          : i
-      ))
-    }
-    className="bg-zinc-950 border-zinc-700 text-white"
-  />
-
-  <Input
-    placeholder="IMEI 2"
-    value={item.imei2 || ""}
-    onChange={(e) =>
-      setCart(cart.map(i =>
-        i.product_id === item.product_id
-          ? { ...i, imei2: e.target.value }
-          : i
-      ))
-    }
-    className="bg-zinc-950 border-zinc-700 text-white"
-  />
-</div>
       )
     );
   };
@@ -321,6 +293,36 @@ setCart([
                         <p className="text-lg font-heading font-bold text-[#D4AF37] mt-1">
                           ₹{item.total.toFixed(2)}
                         </p>
+
+{/* 🔥 IMEI INPUTS */}
+<div className="mt-3 space-y-2">
+  <Input
+    placeholder="IMEI 1"
+    value={item.imei1 || ""}
+    onChange={(e) =>
+      setCart(cart.map(i =>
+        i.product_id === item.product_id
+          ? { ...i, imei1: e.target.value }
+          : i
+      ))
+    }
+    className="bg-zinc-950 border-zinc-700 text-white"
+  />
+
+  <Input
+    placeholder="IMEI 2"
+    value={item.imei2 || ""}
+    onChange={(e) =>
+      setCart(cart.map(i =>
+        i.product_id === item.product_id
+          ? { ...i, imei2: e.target.value }
+          : i
+      ))
+    }
+    className="bg-zinc-950 border-zinc-700 text-white"
+  />
+</div>
+      )
                       </div>
                     </div>
                   </div>
