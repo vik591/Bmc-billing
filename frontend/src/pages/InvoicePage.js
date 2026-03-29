@@ -49,11 +49,16 @@ export const InvoicePage = () => {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    const pageWidth = 210; // A4 width
+const imgWidth = pageWidth;
+const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Invoice-${bill?.invoice_number || "bill"}.pdf`);
+pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      const pdfBlob = pdf.output('blob');
+const pdfUrl = URL.createObjectURL(pdfBlob);
+
+// 🔥 App + Mobile working
+window.open(pdfUrl, '_blank');
 
       toast.success('PDF downloaded successfully');
     } catch (error) {
@@ -102,7 +107,11 @@ export const InvoicePage = () => {
       </div>
 
       {/* INVOICE */}
-      <div ref={invoiceRef} className="max-w-4xl mx-auto bg-white shadow-lg p-10 text-black">
+      <div
+          ref={invoiceRef}
+          id="invoice-content"
+          className="max-w-[210mm] mx-auto bg-white p-6 text-sm"
+>
 
         {/* HEADER */}
         <div className="flex justify-between border-b pb-4 mb-6">
@@ -144,7 +153,16 @@ export const InvoicePage = () => {
           <tbody>
             {bill.items?.map((item, i) => (
               <tr key={i}>
-                <td className="border p-2">{item.product_name}</td>
+<td className="border p-2">
+  {item.product_name}
+
+  {(item.imei1 || item.imei2) && (
+    <div className="text-xs text-gray-500 mt-1">
+      {item.imei1 && <div>IMEI 1: {item.imei1}</div>}
+      {item.imei2 && <div>IMEI 2: {item.imei2}</div>}
+    </div>
+  )}
+</td>
                 <td className="border p-2 text-center">{item.quantity}</td>
                 <td className="border p-2 text-right">₹{item.price}</td>
                 <td className="border p-2 text-right">₹{item.total}</td>
