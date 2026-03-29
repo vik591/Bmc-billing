@@ -472,7 +472,7 @@ const handleGenerateBill = async () => {
               Generate Bill
             </Button>
           </Card>
-        </div
+        </div>
       </div>
 
       {/* Barcode Scanner Modal */}
