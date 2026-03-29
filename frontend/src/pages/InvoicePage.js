@@ -37,12 +37,13 @@ export const InvoicePage = () => {
 
   const handlePrint = () => window.print();
 
-  // ✅ FINAL PDF FIX
+  // ✅ FINAL WORKING DOWNLOAD (APP + BROWSER)
   const handleDownloadPDF = async () => {
     try {
       const element = invoiceRef.current;
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // wait for render
+      await new Promise(res => setTimeout(res, 500));
 
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -61,18 +62,32 @@ export const InvoicePage = () => {
       pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
 
       // 🔥 FILE NAME FIX
-      const name = (bill.customer_name || "customer")
-        .toLowerCase()
-        .replace(/\s+/g, "_");
+      const name = bill.customer_name
+        ? bill.customer_name.trim().toLowerCase().replace(/\s+/g, "_")
+        : "customer";
 
-      const invoice = bill.invoice_number.replace("INV", "BMC");
+      const invoice = bill.invoice_number
+        ? bill.invoice_number.replace("INV", "BMC")
+        : "bill";
 
-      pdf.save(`${name}_${invoice}.pdf`);
+      const fileName = `${name}_${invoice}.pdf`;
 
-      toast.success("PDF saved");
+      // 🔥 KEY FIX FOR APP DOWNLOAD
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+
+      URL.revokeObjectURL(url);
+
+      toast.success("PDF Downloaded");
+
     } catch (err) {
       console.log(err);
-      toast.error("PDF failed");
+      toast.error("Download failed");
     }
   };
 
@@ -104,9 +119,7 @@ export const InvoicePage = () => {
         {/* HEADER */}
         <div className="flex justify-between border-b pb-4 mb-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-wide">
-              Bharti Mobile Collection
-            </h1>
+            <h1 className="text-2xl font-bold">Bharti Mobile Collection</h1>
             <p>8982132343 / 9993448128</p>
             <p className="text-xs">
               Shop No. 17, Ultimate Plaza - 1,<br/>
@@ -117,7 +130,7 @@ export const InvoicePage = () => {
 
           <div className="text-right">
             <h2 className="text-xl font-bold">INVOICE</h2>
-            <p>No: {bill.invoice_number.replace("INV", "BMC")}</p>
+            <p>No: {bill.invoice_number?.replace("INV", "BMC")}</p>
             <p>{new Date(bill.created_at).toLocaleDateString()}</p>
           </div>
         </div>
@@ -146,7 +159,6 @@ export const InvoicePage = () => {
                 <td className="border p-2">
                   {item.product_name}
 
-                  {/* ✅ IMEI SHOW */}
                   {(item.imei1 || item.imei2) && (
                     <div className="text-xs text-gray-500 mt-1">
                       {item.imei1 && <div>IMEI1: {item.imei1}</div>}
@@ -193,7 +205,7 @@ export const InvoicePage = () => {
           </div>
         </div>
 
-        {/* SIGNATURE */}
+        {/* SIGN */}
         <div className="mt-10 flex justify-between">
           <div className="text-center">
             <div className="border-t w-40 mx-auto mb-1"></div>
