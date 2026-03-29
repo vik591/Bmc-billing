@@ -428,6 +428,35 @@ const handleGenerateBill = async () => {
                 <span className="text-xl font-heading font-semibold">Total</span>
                 <span className="text-3xl font-heading font-bold text-[#D4AF37]" data-testid="bill-total">
                   ₹{totals.total.toFixed(2)}
+
+{/* 🔥 IMEI INPUTS */}
+<div className="mt-3 space-y-2">
+  <Input
+    placeholder="IMEI 1"
+    value={item.imei1 || ""}
+    onChange={(e) =>
+      setCart(cart.map(i =>
+        i.product_id === item.product_id
+          ? { ...i, imei1: e.target.value }
+          : i
+      ))
+    }
+    className="bg-zinc-950 border-zinc-700 text-white"
+  />
+
+  <Input
+    placeholder="IMEI 2"
+    value={item.imei2 || ""}
+    onChange={(e) =>
+      setCart(cart.map(i =>
+        i.product_id === item.product_id
+          ? { ...i, imei2: e.target.value }
+          : i
+      ))
+    }
+    className="bg-zinc-950 border-zinc-700 text-white"
+  />
+</div>
                 </span>
               </div>
             </div>
