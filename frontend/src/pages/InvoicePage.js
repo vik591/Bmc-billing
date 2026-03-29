@@ -37,119 +37,92 @@ export const InvoicePage = () => {
 
   const handlePrint = () => window.print();
 
-  // ✅ PERFECT PDF (MOBILE + SAVE)
+  // ✅ FIXED PDF DOWNLOAD
   const handleDownloadPDF = async () => {
     try {
       const element = invoiceRef.current;
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         backgroundColor: "#ffffff",
-        windowWidth: 1200, // 🔥 FIX LAYOUT
+        scrollY: -window.scrollY,
       });
 
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
 
       const pdf = new jsPDF("p", "mm", "a4");
 
       const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
 
-      // 🔥 FORCE DOWNLOAD (MOBILE FIX)
-      const blob = pdf.output("blob");
-      const url = URL.createObjectURL(blob);
+      pdf.save(`Invoice-${bill.invoice_number}.pdf`);
 
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Invoice-${bill.invoice_number}.pdf`;
-      a.click();
-
-      URL.revokeObjectURL(url);
-
-      toast.success("PDF saved");
+      toast.success("PDF Downloaded");
     } catch (err) {
       console.log(err);
-      toast.error("PDF failed");
+      toast.error("PDF Failed");
     }
   };
 
-  // ✅ WHATSAPP SHARE (BEST POSSIBLE)
+  // ⚠️ WhatsApp (link share only possible in web)
   const handleShareWhatsApp = () => {
-    const link = `${window.location.origin}/invoice/${bill.id}`;
-
-    const message = `Invoice: ${bill.invoice_number}
-Total: ₹${bill.total}
-
-👉 View & Download:
-${link}`;
-
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    const url = `${window.location.origin}/invoice/${bill.id}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(url)}`);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        Loading...
-      </div>
-    );
-  }
-
-  if (!bill || !settings) return null;
+  if (loading) return <div className="p-10">Loading...</div>;
+  if (!bill) return <div className="p-10">No data</div>;
 
   return (
-    <div className="min-h-screen bg-white p-2 md:p-6">
+    <div className="bg-gray-100 p-4">
 
-      {/* ACTION BUTTONS */}
-      <div className="max-w-[210mm] mx-auto mb-4 flex gap-3">
-        <Button onClick={handlePrint}>
-          <Printer className="w-4 h-4 mr-2" /> Print
-        </Button>
-
-        <Button onClick={handleDownloadPDF}>
-          <Download className="w-4 h-4 mr-2" /> PDF
-        </Button>
-
-        <Button onClick={handleShareWhatsApp}>
-          <Share2 className="w-4 h-4 mr-2" /> WhatsApp
-        </Button>
+      {/* BUTTONS */}
+      <div className="max-w-4xl mx-auto mb-4 flex gap-2">
+        <Button onClick={handlePrint}><Printer className="w-4 mr-2"/>Print</Button>
+        <Button onClick={handleDownloadPDF}><Download className="w-4 mr-2"/>PDF</Button>
+        <Button onClick={handleShareWhatsApp}><Share2 className="w-4 mr-2"/>WhatsApp</Button>
       </div>
 
       {/* INVOICE */}
       <div
         ref={invoiceRef}
-        style={{ width: "210mm", minHeight: "297mm" }}
-        className="w-full max-w-[210mm] mx-auto bg-white p-6 text-sm text-black"
+        className="bg-white text-black p-6 shadow"
+        style={{ width: "100%", maxWidth: "210mm", margin: "auto" }}
       >
 
         {/* HEADER */}
         <div className="flex justify-between border-b pb-4 mb-4">
           <div>
-            <h1 className="text-xl font-bold">{settings.shop_name}</h1>
-            <p>{settings.contact_number}</p>
-            <p className="text-xs">{settings.address}</p>
+            <h1 className="text-2xl font-bold">Bharti Mobile Collection</h1>
+            <p>8982132343 / 9993448128</p>
+            <p className="text-xs">
+              Shop No. 17, Ultimate Plaza - 1,<br/>
+              Mandakini Square, Kolar Road,<br/>
+              Bhopal (M.P)
+            </p>
           </div>
 
           <div className="text-right">
-            <h2 className="text-lg font-bold">INVOICE</h2>
-            <p><b>No:</b> {bill.invoice_number}</p>
-            <p><b>Date:</b> {new Date(bill.created_at).toLocaleDateString()}</p>
+            <h2 className="text-xl font-bold">INVOICE</h2>
+            <p>No: {bill.invoice_number}</p>
+            <p>{new Date(bill.created_at).toLocaleDateString()}</p>
           </div>
         </div>
 
         {/* CUSTOMER */}
         <div className="mb-4">
-          <p className="font-semibold">Bill To:</p>
-          <p>{bill.customer_name || "Walk-in Customer"}</p>
+          <h3 className="font-semibold">Bill To:</h3>
+          <p>{bill.customer_name || "Walk-in"}</p>
           <p>{bill.customer_phone}</p>
         </div>
 
         {/* TABLE */}
-        <table className="w-full border mb-4 text-xs">
-          <thead>
-            <tr className="bg-gray-100">
+        <table className="w-full border mb-4 text-sm">
+          <thead className="bg-gray-100">
+            <tr>
               <th className="border p-2 text-left">Item</th>
               <th className="border p-2 text-center">Qty</th>
               <th className="border p-2 text-right">Price</th>
@@ -163,14 +136,14 @@ ${link}`;
                 <td className="border p-2">
                   {item.product_name}
 
+                  {/* ✅ IMEI SHOW */}
                   {(item.imei1 || item.imei2) && (
-                    <div className="text-[10px] text-gray-600 mt-1">
+                    <div className="text-xs text-gray-500 mt-1">
                       {item.imei1 && <div>IMEI1: {item.imei1}</div>}
                       {item.imei2 && <div>IMEI2: {item.imei2}</div>}
                     </div>
                   )}
                 </td>
-
                 <td className="border p-2 text-center">{item.quantity}</td>
                 <td className="border p-2 text-right">₹{item.price}</td>
                 <td className="border p-2 text-right">₹{item.total}</td>
@@ -181,7 +154,7 @@ ${link}`;
 
         {/* TOTAL */}
         <div className="flex justify-end">
-          <div className="w-60 border p-3 text-xs">
+          <div className="border p-4 w-64">
             <div className="flex justify-between">
               <span>Subtotal</span>
               <span>₹{bill.subtotal}</span>
@@ -195,49 +168,48 @@ ${link}`;
             )}
 
             {bill.discount_amount > 0 && (
-              <div className="flex justify-between text-red-600">
+              <div className="flex justify-between text-red-500">
                 <span>Discount</span>
                 <span>-₹{bill.discount_amount}</span>
               </div>
             )}
 
-            <div className="flex justify-between font-bold border-t mt-2 pt-2 text-sm">
+            <div className="border-t mt-2 pt-2 flex justify-between font-bold text-lg">
               <span>Total</span>
               <span>₹{bill.total}</span>
             </div>
 
-            <p className="mt-1">Payment: {bill.payment_mode}</p>
+            <p className="text-sm mt-2">Payment: {bill.payment_mode}</p>
           </div>
         </div>
 
         {/* SIGN */}
-        <div className="mt-10 flex justify-between text-xs">
+        <div className="mt-10 flex justify-between">
           <div className="text-center">
-            <div className="border-t w-32 mb-1"></div>
-            Customer Signature
+            <div className="border-t w-40 mx-auto mb-1"></div>
+            <p className="text-xs">Customer Signature</p>
           </div>
 
           <div className="text-center">
-            <div className="border-t w-32 mb-1"></div>
-            Authorized Sign
+            <div className="border-t w-40 mx-auto mb-1"></div>
+            <p className="text-xs font-semibold">For Bharti Mobile Collection</p>
           </div>
         </div>
 
         {/* FOOTER */}
-        <div className="mt-6 text-[10px]">
-          <p className="text-center font-semibold">
+        <div className="mt-6 text-[11px]">
+          <p className="text-center font-semibold mb-2">
             Thank you for shopping 🙏
           </p>
 
-          <ul className="mt-2 list-disc pl-4 space-y-1">
-            <li>No return / exchange</li>
-            <li>No warranty on physical damage</li>
-            <li>Keep invoice safe</li>
+          <p className="font-semibold">Terms & Conditions:</p>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>Goods once sold will not be taken back or exchanged.</li>
+            <li>No warranty on physical damage.</li>
+            <li>Keep invoice safe for warranty.</li>
+            <li>Warranty as per brand policy.</li>
+            <li>Subject to Bhopal jurisdiction.</li>
           </ul>
-
-          {settings.upi_id && (
-            <p className="text-center mt-2">UPI: {settings.upi_id}</p>
-          )}
         </div>
 
       </div>
