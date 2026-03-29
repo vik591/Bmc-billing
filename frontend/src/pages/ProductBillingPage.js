@@ -56,16 +56,18 @@ export const ProductBillingPage = () => {
     if (existingItem) {
       updateQuantity(product.id, existingItem.quantity + 1);
     } else {
-      setCart([
-        ...cart,
-        {
-          product_id: product.id,
-          product_name: product.name,
-          quantity: 1,
-          price: product.price,
-          total: product.price,
-        },
-      ]);
+setCart([
+  ...cart,
+  {
+    product_id: product.id,
+    product_name: product.name,
+    quantity: 1,
+    price: product.price,
+    total: product.price,
+    imei1: "",
+    imei2: ""
+  },
+]);
     }
     setSearchQuery('');
     setSearchResults([]);
@@ -78,6 +80,34 @@ export const ProductBillingPage = () => {
         item.product_id === productId
           ? { ...item, quantity: newQuantity, total: item.price * newQuantity }
           : item
+{/* 🔥 IMEI INPUTS */}
+<div className="mt-3 space-y-2">
+  <Input
+    placeholder="IMEI 1"
+    value={item.imei1 || ""}
+    onChange={(e) =>
+      setCart(cart.map(i =>
+        i.product_id === item.product_id
+          ? { ...i, imei1: e.target.value }
+          : i
+      ))
+    }
+    className="bg-zinc-950 border-zinc-700 text-white"
+  />
+
+  <Input
+    placeholder="IMEI 2"
+    value={item.imei2 || ""}
+    onChange={(e) =>
+      setCart(cart.map(i =>
+        i.product_id === item.product_id
+          ? { ...i, imei2: e.target.value }
+          : i
+      ))
+    }
+    className="bg-zinc-950 border-zinc-700 text-white"
+  />
+</div>
       )
     );
   };
@@ -113,58 +143,48 @@ export const ProductBillingPage = () => {
     return { subtotal, gstAmount, discountAmount, total };
   };
 
-const handleGenerateBill = async () => {
-  if (cart.length === 0) {
-    toast.error('Add items to cart first');
-    return;
-  }
+  const handleGenerateBill = async () => {
+    if (cart.length === 0) {
+      toast.error('Add items to cart first');
+      return;
+    }
 
-  const { subtotal, gstAmount, discountAmount, total } = calculateTotals();
+    const { subtotal, gstAmount, discountAmount, total } = calculateTotals();
 
-  try {
-    const response = await productBillsAPI.create({
-      items: cart.map(i => ({
-        product_id: i.product_id,
-        product_name: i.product_name,
-        quantity: i.quantity,
-        price: i.price,
-        total: i.total,
-        imei1: i.imei1 || "",
-        imei2: i.imei2 || ""
-      })),
-      subtotal,
-      gst_rate: billData.gstRate,
-      gst_amount: gstAmount,
-      discount_type: billData.discountType,
-      discount_value: billData.discountValue,
-      discount_amount: discountAmount,
-      total,
-      payment_mode: billData.paymentMode,
-      customer_name: billData.customerName || null,
-      customer_phone: billData.customerPhone || null,
-    });
+    try {
+      const response = await productBillsAPI.create({
+        items: cart,
+        subtotal,
+        gst_rate: billData.gstRate,
+        gst_amount: gstAmount,
+        discount_type: billData.discountType,
+        discount_value: billData.discountValue,
+        discount_amount: discountAmount,
+        total,
+        payment_mode: billData.paymentMode,
+        customer_name: billData.customerName || null,
+        customer_phone: billData.customerPhone || null,
+      });
 
-    toast.success(`Bill created: ${response.data.invoice_number}`);
-
-    // 🔥 FIXED INVOICE OPEN
-    window.open(`${window.location.origin}/invoice/${response.data.id}`, '_blank');
-
-    // reset
-    setCart([]);
-    setBillData({
-      gstRate: 0,
-      discountType: 'amount',
-      discountValue: 0,
-      paymentMode: 'Cash',
-      customerName: '',
-      customerPhone: '',
-    });
-
-  } catch (error) {
-    console.log(error);
-    toast.error('Failed to create bill');
-  }
-};
+      toast.success(`Bill created: ${response.data.invoice_number}`);
+      
+      // Open invoice in new tab for printing
+      window.open(`/invoice/${response.data.id}`, '_blank');
+      
+      // Reset form
+      setCart([]);
+      setBillData({
+        gstRate: 0,
+        discountType: 'amount',
+        discountValue: 0,
+        paymentMode: 'Cash',
+        customerName: '',
+        customerPhone: '',
+      });
+    } catch (error) {
+      toast.error('Failed to create bill');
+    }
+  };
 
   const handleScanSuccess = (barcode) => {
     searchProducts(barcode);
@@ -310,35 +330,6 @@ const handleGenerateBill = async () => {
           </Card>
         </div>
 
-{/* 🔥 IMEI INPUTS */}
-<div className="mt-3 space-y-2">
-  <Input
-    placeholder="IMEI 1"
-    value={item.imei1 || ""}
-    onChange={(e) =>
-      setCart(cart.map(i =>
-        i.product_id === item.product_id
-          ? { ...i, imei1: e.target.value }
-          : i
-      ))
-    }
-    className="bg-zinc-950 border-zinc-700 text-white"
-  />
-
-  <Input
-    placeholder="IMEI 2"
-    value={item.imei2 || ""}
-    onChange={(e) =>
-      setCart(cart.map(i =>
-        i.product_id === item.product_id
-          ? { ...i, imei2: e.target.value }
-          : i
-      ))
-    }
-    className="bg-zinc-950 border-zinc-700 text-white"
-  />
-</div>
-
         {/* Right: Bill Summary */}
         <div className="lg:col-span-5 flex flex-col space-y-4 overflow-y-auto">
           <Card className="p-6 bg-gradient-to-br from-zinc-900 to-black border border-[#D4AF37]/50">
@@ -457,8 +448,6 @@ const handleGenerateBill = async () => {
                 <span className="text-xl font-heading font-semibold">Total</span>
                 <span className="text-3xl font-heading font-bold text-[#D4AF37]" data-testid="bill-total">
                   ₹{totals.total.toFixed(2)}
-
-
                 </span>
               </div>
             </div>
