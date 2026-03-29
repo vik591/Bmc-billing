@@ -1,196 +1,277 @@
 import React, { useState, useEffect } from 'react';
-import { productsAPI, productBillsAPI } from '../lib/apiService';
-import { Input } from '../components/ui/input';
+import { productsAPI, productBillsAPI } from '../lib/api';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Card } from '../components/ui/card';
+import { toast } from 'sonner';
+import { Search, Plus, Minus, Trash2, Scan, X } from 'lucide-react';
 import { BarcodeScanner } from '../components/BarcodeScanner';
 
 export const ProductBillingPage = () => {
 
   const [products, setProducts] = useState([]);
-  const [search, setSearch] = useState("");
-  const [results, setResults] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const [cart, setCart] = useState([]);
+  const [showScanner, setShowScanner] = useState(false);
 
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [paymentMode, setPaymentMode] = useState("Cash");
-
-  const [gstRate, setGstRate] = useState(0);
-  const [discountType, setDiscountType] = useState("amount");
-  const [discountValue, setDiscountValue] = useState(0);
-
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [scanTarget, setScanTarget] = useState(null);
+  const [billData, setBillData] = useState({
+    gstRate: 0,
+    discountType: 'amount',
+    discountValue: 0,
+    paymentMode: 'Cash',
+    customerName: '',
+    customerPhone: '',
+  });
 
   useEffect(() => {
-    productsAPI.getAll().then(res => setProducts(res.data));
+    fetchProducts();
   }, []);
 
-  const searchProducts = async (q) => {
-    setSearch(q);
-    if (!q) return setResults([]);
-    const res = await productsAPI.search(q);
-    setResults(res.data);
+  const fetchProducts = async () => {
+    try {
+      const response = await productsAPI.getAll();
+      setProducts(response.data);
+    } catch (error) {
+      toast.error('Failed to load products');
+    }
   };
 
-  const addToCart = (p) => {
-    setCart([...cart, {
-      product_id: p.id,
-      product_name: p.name,
-      quantity: 1,
-      price: p.price,
-      total: p.price,
-      imei1: "",
-      imei2: ""
-    }]);
-    setResults([]);
-    setSearch("");
+  const searchProducts = async (query) => {
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      const response = await productsAPI.search(query);
+      setSearchResults(response.data);
+    } catch (error) {
+      toast.error('Search failed');
+    }
   };
 
-  const update = (id, field, value) => {
+  const addToCart = (product) => {
+    const existingItem = cart.find((item) => item.product_id === product.id);
+    if (existingItem) {
+      updateQuantity(product.id, existingItem.quantity + 1);
+    } else {
+      setCart([
+        ...cart,
+        {
+          product_id: product.id,
+          product_name: product.name,
+          quantity: 1,
+          price: product.price,
+          total: product.price,
+          imei1: "",
+          imei2: ""
+        },
+      ]);
+    }
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const updateQuantity = (productId, newQuantity) => {
+    if (newQuantity < 1) return;
+    setCart(
+      cart.map((item) =>
+        item.product_id === productId
+          ? { ...item, quantity: newQuantity, total: item.price * newQuantity }
+          : item
+      )
+    );
+  };
+
+  const updatePrice = (productId, newPrice) => {
+    if (newPrice < 0) return;
+    setCart(
+      cart.map((item) =>
+        item.product_id === productId
+          ? { ...item, price: newPrice, total: newPrice * item.quantity }
+          : item
+      )
+    );
+  };
+
+  const removeFromCart = (productId) => {
+    setCart(cart.filter((item) => item.product_id !== productId));
+  };
+
+  const updateIMEI = (productId, field, value) => {
     setCart(cart.map(i =>
-      i.product_id === id
-        ? {
-            ...i,
-            [field]: value,
-            total:
-              field === "price"
-                ? value * i.quantity
-                : field === "quantity"
-                ? i.price * value
-                : i.total
-          }
+      i.product_id === productId
+        ? { ...i, [field]: value }
         : i
     ));
   };
 
-  const handleScan = (data) => {
-    if (!scanTarget) return;
-    update(scanTarget.id, scanTarget.field, data);
-    setScannerOpen(false);
+  const calculateTotals = () => {
+    const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+    const gstAmount = (subtotal * billData.gstRate) / 100;
+
+    let discountAmount = 0;
+    if (billData.discountType === 'amount') {
+      discountAmount = billData.discountValue;
+    } else {
+      discountAmount = (subtotal * billData.discountValue) / 100;
+    }
+
+    const total = subtotal + gstAmount - discountAmount;
+
+    return { subtotal, gstAmount, discountAmount, total };
   };
 
-  const subtotal = cart.reduce((s, i) => s + i.total, 0);
-  const gstAmount = (subtotal * gstRate) / 100;
+  const handleGenerateBill = async () => {
+    if (cart.length === 0) {
+      toast.error('Add items to cart first');
+      return;
+    }
 
-  const discountAmount =
-    discountType === "percentage"
-      ? (subtotal * discountValue) / 100
-      : discountValue;
+    const { subtotal, gstAmount, discountAmount, total } = calculateTotals();
 
-  const finalTotal = subtotal + gstAmount - discountAmount;
-
-  const generate = async () => {
     try {
-      await productBillsAPI.create({
-        items: cart,
+      const response = await productBillsAPI.create({
+        items: cart.map(i => ({
+          product_id: i.product_id,
+          product_name: i.product_name,
+          quantity: i.quantity,
+          price: i.price,
+          total: i.total,
+          imei1: i.imei1 || "",
+          imei2: i.imei2 || ""
+        })),
         subtotal,
-        gst_rate: gstRate,
+        gst_rate: billData.gstRate,
         gst_amount: gstAmount,
-        discount_type: discountType,
-        discount_value: discountValue,
+        discount_type: billData.discountType,
+        discount_value: billData.discountValue,
         discount_amount: discountAmount,
-        total: finalTotal,
-        payment_mode: paymentMode,
-        customer_name: customerName || "Walk-in Customer",
-        customer_phone: customerPhone || ""
+        total,
+        payment_mode: billData.paymentMode,
+        customer_name: billData.customerName || null,
+        customer_phone: billData.customerPhone || null,
       });
 
-      alert("✅ Bill Generated");
+      toast.success(`Bill created: ${response.data.invoice_number}`);
+
+      window.open(`${window.location.origin}/invoice/${response.data.id}`, '_blank');
+
       setCart([]);
-    } catch (err) {
-      alert("❌ Bill Failed");
+      setBillData({
+        gstRate: 0,
+        discountType: 'amount',
+        discountValue: 0,
+        paymentMode: 'Cash',
+        customerName: '',
+        customerPhone: '',
+      });
+
+    } catch (error) {
+      console.log(error);
+      toast.error('Failed to create bill');
     }
   };
 
+  const handleScanSuccess = (barcode) => {
+    searchProducts(barcode);
+    setShowScanner(false);
+  };
+
+  const totals = calculateTotals();
+
   return (
-    <div className="p-6 text-white">
-
-      <h1 className="text-2xl mb-4">Mobile Billing (IMEI)</h1>
-
-      {/* SEARCH */}
-      <Input
-        placeholder="Search product"
-        value={search}
-        onChange={(e) => searchProducts(e.target.value)}
-      />
-
-      {results.map(p => (
-        <div key={p.id} onClick={() => addToCart(p)} className="p-2 border mt-1 cursor-pointer">
-          {p.name} ₹{p.price}
-        </div>
-      ))}
-
-      {/* CUSTOMER */}
-      <div className="mt-4 space-y-2">
-        <Input placeholder="Customer Name" value={customerName} onChange={(e)=>setCustomerName(e.target.value)} />
-        <Input placeholder="Phone Number" value={customerPhone} onChange={(e)=>setCustomerPhone(e.target.value)} />
-
-        <select className="border p-2 w-full bg-black" value={paymentMode} onChange={(e)=>setPaymentMode(e.target.value)}>
-          <option>Cash</option>
-          <option>UPI</option>
-          <option>Card</option>
-          <option>EMI</option>
-        </select>
+    <div className="h-full flex flex-col">
+      <div className="p-4 md:p-6 border-b border-zinc-800/50 bg-zinc-900/30">
+        <h1 className="text-3xl font-bold">Product Billing</h1>
       </div>
 
-      {/* CART */}
-      {cart.map((i,index)=>(
-        <div key={index} className="border p-3 mt-3 rounded">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 md:p-6">
 
-          <h2>{i.product_name}</h2>
+        {/* LEFT */}
+        <div className="lg:col-span-7 space-y-4">
 
-          <div className="flex gap-2 mt-2">
-            <Input value={i.quantity} onChange={(e)=>update(i.product_id,"quantity",Number(e.target.value))}/>
-            <Input value={i.price} onChange={(e)=>update(i.product_id,"price",Number(e.target.value))}/>
-          </div>
+          <Card className="p-6">
+            <Input
+              placeholder="Search product"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                searchProducts(e.target.value);
+              }}
+            />
 
-          {/* IMEI */}
-          <div className="flex gap-2 mt-2">
-            <Input placeholder="IMEI 1" value={i.imei1} onChange={(e)=>update(i.product_id,"imei1",e.target.value)}/>
-            <Button onClick={()=>{setScanTarget({id:i.product_id,field:"imei1"});setScannerOpen(true);}}>Scan</Button>
-          </div>
+            {searchResults.map((p) => (
+              <div key={p.id} onClick={() => addToCart(p)}>
+                {p.name} ₹{p.price}
+              </div>
+            ))}
+          </Card>
 
-          <div className="flex gap-2 mt-2">
-            <Input placeholder="IMEI 2" value={i.imei2} onChange={(e)=>update(i.product_id,"imei2",e.target.value)}/>
-            <Button onClick={()=>{setScanTarget({id:i.product_id,field:"imei2"});setScannerOpen(true);}}>Scan</Button>
-          </div>
+          <Card className="p-6">
+            {cart.map((item) => (
+              <div key={item.product_id} className="mb-4">
 
-          <p className="mt-2">₹{i.total}</p>
+                <p>{item.product_name}</p>
+
+                <Input value={item.quantity} />
+                <Input value={item.price} />
+
+                {/* IMEI */}
+                <Input
+                  placeholder="IMEI 1"
+                  value={item.imei1}
+                  onChange={(e) => updateIMEI(item.product_id, "imei1", e.target.value)}
+                />
+                <Input
+                  placeholder="IMEI 2"
+                  value={item.imei2}
+                  onChange={(e) => updateIMEI(item.product_id, "imei2", e.target.value)}
+                />
+
+              </div>
+            ))}
+          </Card>
 
         </div>
-      ))}
 
-      {/* GST + DISCOUNT */}
-      <div className="mt-4 space-y-2">
-        <Input type="number" placeholder="GST %" value={gstRate} onChange={(e)=>setGstRate(Number(e.target.value))}/>
+        {/* RIGHT */}
+        <div className="lg:col-span-5 space-y-4">
 
-        <select className="border p-2 w-full bg-black" value={discountType} onChange={(e)=>setDiscountType(e.target.value)}>
-          <option value="amount">Discount ₹</option>
-          <option value="percentage">Discount %</option>
-        </select>
+          <Card className="p-6">
+            <Input
+              placeholder="Customer Name"
+              value={billData.customerName}
+              onChange={(e) => setBillData({ ...billData, customerName: e.target.value })}
+            />
 
-        <Input type="number" placeholder="Discount Value" value={discountValue} onChange={(e)=>setDiscountValue(Number(e.target.value))}/>
+            <Input
+              placeholder="Phone"
+              value={billData.customerPhone}
+              onChange={(e) => setBillData({ ...billData, customerPhone: e.target.value })}
+            />
+          </Card>
+
+          <Card className="p-6">
+            <p>Total: ₹{totals.total}</p>
+
+            <Button onClick={handleGenerateBill}>
+              Generate Bill
+            </Button>
+          </Card>
+
+        </div>
+
       </div>
 
-      {/* TOTAL */}
-      <div className="mt-4 text-lg">
-        Total: ₹{finalTotal}
-      </div>
-
-      {/* BUTTON */}
-      <Button className="mt-4 bg-yellow-500 text-black w-full" onClick={generate}>
-        Generate Bill
-      </Button>
-
-      {/* SCANNER */}
-      {scannerOpen && (
+      {showScanner && (
         <BarcodeScanner
-          onScanSuccess={handleScan}
-          onClose={()=>setScannerOpen(false)}
+          onScanSuccess={handleScanSuccess}
+          onClose={() => setShowScanner(false)}
         />
       )}
-
     </div>
   );
 };
