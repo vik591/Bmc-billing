@@ -21,14 +21,14 @@ export const InvoicePage = () => {
 
   const fetchData = async () => {
     try {
-      const [billResponse, settingsResponse] = await Promise.all([
+      const [billRes, settingsRes] = await Promise.all([
         productBillsAPI.getById(id),
         settingsAPI.get(),
       ]);
 
-      setBill(billResponse.data);
-      setSettings(settingsResponse.data);
-    } catch (error) {
+      setBill(billRes.data);
+      setSettings(settingsRes.data);
+    } catch (err) {
       toast.error('Failed to load invoice');
     } finally {
       setLoading(false);
@@ -37,55 +37,62 @@ export const InvoicePage = () => {
 
   const handlePrint = () => window.print();
 
-  // 🔥 MOBILE + PERFECT PDF
+  // ✅ PERFECT PDF (MOBILE + SAVE)
   const handleDownloadPDF = async () => {
     try {
       const element = invoiceRef.current;
 
       const canvas = await html2canvas(element, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
+        windowWidth: 1200, // 🔥 FIX LAYOUT
       });
 
       const imgData = canvas.toDataURL("image/png");
 
       const pdf = new jsPDF("p", "mm", "a4");
 
-      const pageWidth = 210;
-      const imgWidth = pageWidth;
+      const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
 
-      // ✅ MOBILE FIX
+      // 🔥 FORCE DOWNLOAD (MOBILE FIX)
       const blob = pdf.output("blob");
       const url = URL.createObjectURL(blob);
 
-      window.open(url, "_blank");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Invoice-${bill.invoice_number}.pdf`;
+      a.click();
 
-      toast.success("PDF opened. Download from top menu");
+      URL.revokeObjectURL(url);
+
+      toast.success("PDF saved");
     } catch (err) {
       console.log(err);
       toast.error("PDF failed");
     }
   };
 
-  // ✅ WHATSAPP FIX
+  // ✅ WHATSAPP SHARE (BEST POSSIBLE)
   const handleShareWhatsApp = () => {
     const link = `${window.location.origin}/invoice/${bill.id}`;
 
-    const msg = `Invoice: ${bill.invoice_number}
+    const message = `Invoice: ${bill.invoice_number}
 Total: ₹${bill.total}
-View Bill: ${link}`;
 
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+👉 View & Download:
+${link}`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
-        <p>Loading...</p>
+        Loading...
       </div>
     );
   }
@@ -93,7 +100,7 @@ View Bill: ${link}`;
   if (!bill || !settings) return null;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-3 md:p-6">
+    <div className="min-h-screen bg-white p-2 md:p-6">
 
       {/* ACTION BUTTONS */}
       <div className="max-w-[210mm] mx-auto mb-4 flex gap-3">
@@ -113,8 +120,8 @@ View Bill: ${link}`;
       {/* INVOICE */}
       <div
         ref={invoiceRef}
-        id="invoice-content"
-        className="max-w-[210mm] mx-auto bg-white p-6 text-sm text-black"
+        style={{ width: "210mm", minHeight: "297mm" }}
+        className="w-full max-w-[210mm] mx-auto bg-white p-6 text-sm text-black"
       >
 
         {/* HEADER */}
@@ -156,7 +163,6 @@ View Bill: ${link}`;
                 <td className="border p-2">
                   {item.product_name}
 
-                  {/* 🔥 IMEI SHOW */}
                   {(item.imei1 || item.imei2) && (
                     <div className="text-[10px] text-gray-600 mt-1">
                       {item.imei1 && <div>IMEI1: {item.imei1}</div>}
