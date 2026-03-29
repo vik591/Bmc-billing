@@ -29,7 +29,6 @@ export const InvoicePage = () => {
       setBill(billResponse.data);
       setSettings(settingsResponse.data);
     } catch (error) {
-      console.error(error);
       toast.error('Failed to load invoice');
     } finally {
       setLoading(false);
@@ -38,61 +37,66 @@ export const InvoicePage = () => {
 
   const handlePrint = () => window.print();
 
+  // 🔥 MOBILE + PERFECT PDF
   const handleDownloadPDF = async () => {
     try {
       const element = invoiceRef.current;
+
       const canvas = await html2canvas(element, {
-        scale: 2,
-        backgroundColor: '#ffffff',
+        scale: 3,
+        useCORS: true,
+        backgroundColor: "#ffffff",
       });
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL("image/png");
 
-    const pageWidth = 210; // A4 width
-const imgWidth = pageWidth;
-const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdf = new jsPDF("p", "mm", "a4");
 
-pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      const pdfBlob = pdf.output('blob');
-const pdfUrl = URL.createObjectURL(pdfBlob);
+      const pageWidth = 210;
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-// 🔥 App + Mobile working
-window.open(pdfUrl, '_blank');
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
 
-      toast.success('PDF downloaded successfully');
-    } catch (error) {
-      toast.error('Failed to generate PDF');
+      // ✅ MOBILE FIX
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+
+      window.open(url, "_blank");
+
+      toast.success("PDF opened. Download from top menu");
+    } catch (err) {
+      console.log(err);
+      toast.error("PDF failed");
     }
   };
 
+  // ✅ WHATSAPP FIX
   const handleShareWhatsApp = () => {
-    const message = `Invoice: ${bill?.invoice_number}\nTotal: ₹${bill?.total}\nFrom: ${settings?.shop_name}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    const link = `${window.location.origin}/invoice/${bill.id}`;
+
+    const msg = `Invoice: ${bill.invoice_number}
+Total: ₹${bill.total}
+View Bill: ${link}`;
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
-        <p>Loading invoice...</p>
+        <p>Loading...</p>
       </div>
     );
   }
 
-  if (!bill || !settings) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p>No invoice data found</p>
-      </div>
-    );
-  }
+  if (!bill || !settings) return null;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 p-3 md:p-6">
 
-      {/* Buttons */}
-      <div className="max-w-4xl mx-auto mb-6 flex gap-3">
+      {/* ACTION BUTTONS */}
+      <div className="max-w-[210mm] mx-auto mb-4 flex gap-3">
         <Button onClick={handlePrint}>
           <Printer className="w-4 h-4 mr-2" /> Print
         </Button>
@@ -108,41 +112,37 @@ window.open(pdfUrl, '_blank');
 
       {/* INVOICE */}
       <div
-          ref={invoiceRef}
-          id="invoice-content"
-          className="max-w-[210mm] mx-auto bg-white p-6 text-sm"
->
+        ref={invoiceRef}
+        id="invoice-content"
+        className="max-w-[210mm] mx-auto bg-white p-6 text-sm text-black"
+      >
 
         {/* HEADER */}
-        <div className="flex justify-between border-b pb-4 mb-6">
+        <div className="flex justify-between border-b pb-4 mb-4">
           <div>
-            <h1 className="text-2xl font-bold">Bharti Mobile Collection</h1>
-            <p>Contact: 8982132343 / 9993448128</p>
-            <p>
-              Shop No. 17, Ultimate Plaza - 1,<br />
-              Mandakini Square, Kolar Road,<br />
-              Bhopal (M.P)
-            </p>
+            <h1 className="text-xl font-bold">{settings.shop_name}</h1>
+            <p>{settings.contact_number}</p>
+            <p className="text-xs">{settings.address}</p>
           </div>
 
           <div className="text-right">
-            <h2 className="text-xl font-bold">INVOICE</h2>
-            <p><b>Invoice:</b> {bill.invoice_number}</p>
+            <h2 className="text-lg font-bold">INVOICE</h2>
+            <p><b>No:</b> {bill.invoice_number}</p>
             <p><b>Date:</b> {new Date(bill.created_at).toLocaleDateString()}</p>
           </div>
         </div>
 
         {/* CUSTOMER */}
-        <div className="mb-6">
-          <h3 className="font-semibold">Bill To:</h3>
+        <div className="mb-4">
+          <p className="font-semibold">Bill To:</p>
           <p>{bill.customer_name || "Walk-in Customer"}</p>
           <p>{bill.customer_phone}</p>
         </div>
 
         {/* TABLE */}
-        <table className="w-full border mb-6">
-          <thead className="bg-gray-100">
-            <tr>
+        <table className="w-full border mb-4 text-xs">
+          <thead>
+            <tr className="bg-gray-100">
               <th className="border p-2 text-left">Item</th>
               <th className="border p-2 text-center">Qty</th>
               <th className="border p-2 text-right">Price</th>
@@ -153,16 +153,18 @@ window.open(pdfUrl, '_blank');
           <tbody>
             {bill.items?.map((item, i) => (
               <tr key={i}>
-<td className="border p-2">
-  {item.product_name}
+                <td className="border p-2">
+                  {item.product_name}
 
-  {(item.imei1 || item.imei2) && (
-    <div className="text-xs text-gray-500 mt-1">
-      {item.imei1 && <div>IMEI 1: {item.imei1}</div>}
-      {item.imei2 && <div>IMEI 2: {item.imei2}</div>}
-    </div>
-  )}
-</td>
+                  {/* 🔥 IMEI SHOW */}
+                  {(item.imei1 || item.imei2) && (
+                    <div className="text-[10px] text-gray-600 mt-1">
+                      {item.imei1 && <div>IMEI1: {item.imei1}</div>}
+                      {item.imei2 && <div>IMEI2: {item.imei2}</div>}
+                    </div>
+                  )}
+                </td>
+
                 <td className="border p-2 text-center">{item.quantity}</td>
                 <td className="border p-2 text-right">₹{item.price}</td>
                 <td className="border p-2 text-right">₹{item.total}</td>
@@ -173,7 +175,7 @@ window.open(pdfUrl, '_blank');
 
         {/* TOTAL */}
         <div className="flex justify-end">
-          <div className="w-64 border p-4">
+          <div className="w-60 border p-3 text-xs">
             <div className="flex justify-between">
               <span>Subtotal</span>
               <span>₹{bill.subtotal}</span>
@@ -193,48 +195,42 @@ window.open(pdfUrl, '_blank');
               </div>
             )}
 
-            <div className="flex justify-between font-bold text-lg border-t mt-2 pt-2">
+            <div className="flex justify-between font-bold border-t mt-2 pt-2 text-sm">
               <span>Total</span>
               <span>₹{bill.total}</span>
             </div>
 
-            <p className="text-sm mt-2">Payment: {bill.payment_mode}</p>
+            <p className="mt-1">Payment: {bill.payment_mode}</p>
           </div>
         </div>
 
-        {/* SIGNATURE */}
-        <div className="mt-12 flex justify-between items-end">
+        {/* SIGN */}
+        <div className="mt-10 flex justify-between text-xs">
           <div className="text-center">
-            <div className="border-t w-40 mx-auto mb-1"></div>
-            <p className="text-sm">Customer Signature</p>
+            <div className="border-t w-32 mb-1"></div>
+            Customer Signature
           </div>
 
           <div className="text-center">
-            <div className="border-t w-40 mx-auto mb-1"></div>
-            <p className="text-sm font-semibold">For Bharti Mobile Collection</p>
-            <p className="text-xs text-gray-500">Authorized Signature</p>
+            <div className="border-t w-32 mb-1"></div>
+            Authorized Sign
           </div>
         </div>
 
         {/* FOOTER */}
-        <div className="mt-8 border-t pt-4 text-sm">
+        <div className="mt-6 text-[10px]">
           <p className="text-center font-semibold">
-            Thank you for shopping with Bharti Mobile Collection 🙏
+            Thank you for shopping 🙏
           </p>
 
-          <div className="mt-4 text-xs">
-            <p className="font-semibold mb-1">Terms & Conditions:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Goods once sold will not be taken back or exchanged.</li>
-              <li>No warranty on physical damage.</li>
-              <li>Please keep the invoice safe for warranty claims.</li>
-              <li>Warranty as per brand/service center policy.</li>
-              <li>All disputes subject to Bhopal jurisdiction.</li>
-            </ul>
-          </div>
+          <ul className="mt-2 list-disc pl-4 space-y-1">
+            <li>No return / exchange</li>
+            <li>No warranty on physical damage</li>
+            <li>Keep invoice safe</li>
+          </ul>
 
           {settings.upi_id && (
-            <p className="mt-4 text-center">UPI: {settings.upi_id}</p>
+            <p className="text-center mt-2">UPI: {settings.upi_id}</p>
           )}
         </div>
 
