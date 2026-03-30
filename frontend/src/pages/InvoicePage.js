@@ -21,14 +21,14 @@ export const InvoicePage = () => {
 
   const fetchData = async () => {
     try {
-      const [billRes, settingsRes] = await Promise.all([
+      const [billResponse, settingsResponse] = await Promise.all([
         productBillsAPI.getById(id),
         settingsAPI.get(),
       ]);
 
-      setBill(billRes.data);
-      setSettings(settingsRes.data);
-    } catch (err) {
+      setBill(billResponse.data);
+      setSettings(settingsResponse.data);
+    } catch (error) {
       toast.error('Failed to load invoice');
     } finally {
       setLoading(false);
@@ -37,7 +37,7 @@ export const InvoicePage = () => {
 
   const handlePrint = () => window.print();
 
-  // 🔥 FINAL PDF (APP + BROWSER)
+  // 🔥 FINAL PDF DOWNLOAD (APP + BROWSER FIXED)
   const handleDownloadPDF = async () => {
     try {
       const element = invoiceRef.current;
@@ -59,7 +59,7 @@ export const InvoicePage = () => {
 
       pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
 
-      // 🔥 filename
+      // ✅ Filename fix
       const name = bill.customer_name
         ? bill.customer_name.trim().toLowerCase().replace(/\s+/g, "_")
         : "customer";
@@ -70,36 +70,40 @@ export const InvoicePage = () => {
 
       const fileName = `${name}_${invoice}.pdf`;
 
+      // ✅ Force download (WORKS IN APP)
       const blob = pdf.output("blob");
       const url = URL.createObjectURL(blob);
 
-      const newWindow = window.open(url, "_blank");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
 
-      if (!newWindow) {
-        alert("Allow popup to download PDF");
-      }
+      URL.revokeObjectURL(url);
 
-      toast.success("PDF opened → Save manually");
+      toast.success("PDF downloaded ✅");
 
-    } catch (err) {
-      console.log(err);
-      toast.error("PDF failed");
+    } catch (error) {
+      console.log(error);
+      toast.error("PDF failed ❌");
     }
   };
 
   const handleShareWhatsApp = () => {
-    const url = `${window.location.origin}/invoice/${bill.id}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(url)}`);
+    const message = `Invoice ${bill.invoice_number}\nTotal ₹${bill.total}\nBharti Mobile Collection`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`);
   };
 
   if (loading) return <div className="p-10">Loading...</div>;
-  if (!bill) return <div className="p-10">No data</div>;
+  if (!bill) return <div>No Data</div>;
 
   return (
-    <div className="bg-gray-100 p-4">
+    <div className="bg-gray-100 p-4 min-h-screen">
 
-      {/* BUTTONS */}
-      <div className="max-w-4xl mx-auto mb-4 flex gap-2">
+      {/* Buttons */}
+      <div className="max-w-3xl mx-auto mb-4 flex gap-2">
         <Button onClick={handlePrint}><Printer className="w-4 mr-2"/>Print</Button>
         <Button onClick={handleDownloadPDF}><Download className="w-4 mr-2"/>PDF</Button>
         <Button onClick={handleShareWhatsApp}><Share2 className="w-4 mr-2"/>WhatsApp</Button>
@@ -108,16 +112,16 @@ export const InvoicePage = () => {
       {/* INVOICE */}
       <div
         ref={invoiceRef}
-        className="bg-white text-black p-6 shadow"
-        style={{ width: "100%", maxWidth: "210mm", margin: "auto" }}
+        className="bg-white max-w-3xl mx-auto p-6 text-black"
+        style={{ width: "794px", minHeight: "1123px" }}
       >
 
         {/* HEADER */}
         <div className="flex justify-between border-b pb-4 mb-4">
           <div>
-            <h1 className="text-2xl font-bold">Bharti Mobile Collection</h1>
+            <h1 className="text-xl font-bold">Bharti Mobile Collection</h1>
             <p>8982132343 / 9993448128</p>
-            <p className="text-xs">
+            <p className="text-sm">
               Shop No. 17, Ultimate Plaza - 1,<br/>
               Mandakini Square, Kolar Road,<br/>
               Bhopal (M.P)
@@ -125,38 +129,37 @@ export const InvoicePage = () => {
           </div>
 
           <div className="text-right">
-            <h2 className="text-xl font-bold">INVOICE</h2>
-            <p>No: {bill.invoice_number?.replace("INV", "BMC")}</p>
+            <h2 className="font-bold">INVOICE</h2>
+            <p>No: {bill.invoice_number.replace("INV", "BMC")}</p>
             <p>{new Date(bill.created_at).toLocaleDateString()}</p>
           </div>
         </div>
 
         {/* CUSTOMER */}
         <div className="mb-4">
-          <h3 className="font-semibold">Bill To:</h3>
-          <p>{bill.customer_name || "Walk-in Customer"}</p>
+          <p className="font-semibold">Bill To:</p>
+          <p>{bill.customer_name || "Customer"}</p>
           <p>{bill.customer_phone}</p>
         </div>
 
         {/* TABLE */}
-        <table className="w-full border mb-4 text-sm">
-          <thead className="bg-gray-100">
-            <tr>
+        <table className="w-full border mb-4">
+          <thead>
+            <tr className="bg-gray-200">
               <th className="border p-2 text-left">Item</th>
-              <th className="border p-2 text-center">Qty</th>
-              <th className="border p-2 text-right">Price</th>
-              <th className="border p-2 text-right">Total</th>
+              <th className="border p-2">Qty</th>
+              <th className="border p-2">Price</th>
+              <th className="border p-2">Total</th>
             </tr>
           </thead>
 
           <tbody>
-            {bill.items?.map((item, i) => (
+            {bill.items.map((item, i) => (
               <tr key={i}>
                 <td className="border p-2">
                   {item.product_name}
-
                   {(item.imei1 || item.imei2) && (
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-gray-600 mt-1">
                       {item.imei1 && <div>IMEI1: {item.imei1}</div>}
                       {item.imei2 && <div>IMEI2: {item.imei2}</div>}
                     </div>
@@ -170,7 +173,7 @@ export const InvoicePage = () => {
           </tbody>
         </table>
 
-        {/* TOTAL */}
+        {/* TOTAL BOX */}
         <div className="flex justify-end">
           <div className="border p-4 w-64">
             <div className="flex justify-between">
@@ -178,12 +181,10 @@ export const InvoicePage = () => {
               <span>₹{bill.subtotal}</span>
             </div>
 
-            {bill.gst_amount > 0 && (
-              <div className="flex justify-between">
-                <span>GST</span>
-                <span>₹{bill.gst_amount}</span>
-              </div>
-            )}
+            <div className="flex justify-between">
+              <span>GST</span>
+              <span>₹{bill.gst_amount}</span>
+            </div>
 
             {bill.discount_amount > 0 && (
               <div className="flex justify-between text-red-500">
@@ -192,40 +193,27 @@ export const InvoicePage = () => {
               </div>
             )}
 
-            <div className="border-t mt-2 pt-2 flex justify-between font-bold text-lg">
+            <hr className="my-2"/>
+
+            <div className="flex justify-between font-bold text-lg">
               <span>Total</span>
               <span>₹{bill.total}</span>
             </div>
 
-            <p className="text-sm mt-2">Payment: {bill.payment_mode}</p>
-          </div>
-        </div>
-
-        {/* SIGNATURE */}
-        <div className="mt-10 flex justify-between">
-          <div className="text-center">
-            <div className="border-t w-40 mx-auto mb-1"></div>
-            <p className="text-xs">Customer Signature</p>
-          </div>
-
-          <div className="text-center">
-            <div className="border-t w-40 mx-auto mb-1"></div>
-            <p className="text-xs font-semibold">For Bharti Mobile Collection</p>
+            <p className="text-sm mt-1">Payment: {bill.payment_mode}</p>
           </div>
         </div>
 
         {/* FOOTER */}
-        <div className="mt-6 text-[11px]">
+        <div className="mt-6 text-xs">
           <p className="text-center font-semibold mb-2">
-            Thank you for shopping 🙏
+            Thank you for shopping with Bharti Mobile Collection 🙏
           </p>
 
-          <p className="font-semibold">Terms & Conditions:</p>
-          <ul className="list-disc pl-4 space-y-1">
-            <li>Goods once sold will not be taken back or exchanged.</li>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Goods once sold will not be taken back.</li>
             <li>No warranty on physical damage.</li>
-            <li>Please keep invoice safe for warranty claims.</li>
-            <li>Warranty as per brand/service center policy.</li>
+            <li>Keep invoice safe for warranty.</li>
             <li>All disputes subject to Bhopal jurisdiction.</li>
           </ul>
         </div>
