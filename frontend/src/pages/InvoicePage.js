@@ -37,7 +37,7 @@ export const InvoicePage = () => {
 
   const handlePrint = () => window.print();
 
-  // ✅ A4 PERFECT PDF FIX
+  // ✅ FIXED PDF (1 PAGE A4)
   const handleDownloadPDF = async () => {
     try {
       const element = invoiceRef.current;
@@ -45,36 +45,27 @@ export const InvoicePage = () => {
       await new Promise(res => setTimeout(res, 500));
 
       const canvas = await html2canvas(element, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
-        backgroundColor: "#ffffff",
+        backgroundColor: "#ffffff"
       });
 
       const imgData = canvas.toDataURL("image/jpeg", 1.0);
 
       const pdf = new jsPDF("p", "mm", "a4");
 
-      const pageWidth = 210;
-      const pageHeight = 297;
+      const pdfWidth = 210;
+      const pdfHeight = 297;
 
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgWidth = pdfWidth;
+      let imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      let position = 0;
-
-      if (imgHeight <= pageHeight) {
-        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-      } else {
-        let heightLeft = imgHeight;
-
-        while (heightLeft > 0) {
-          pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-          position -= pageHeight;
-
-          if (heightLeft > 0) pdf.addPage();
-        }
+      // 🔥 MAIN FIX: force single page
+      if (imgHeight > pdfHeight) {
+        imgHeight = pdfHeight;
       }
+
+      pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
 
       const name = bill.customer_name
         ? bill.customer_name.trim().toLowerCase().replace(/\s+/g, "_")
@@ -85,6 +76,8 @@ export const InvoicePage = () => {
         : "bill";
 
       pdf.save(`${name}_${invoice}.pdf`);
+
+      toast.success("PDF Downloaded");
 
     } catch (err) {
       console.log(err);
@@ -113,11 +106,12 @@ export const InvoicePage = () => {
       {/* INVOICE */}
       <div
         ref={invoiceRef}
-        className="bg-white text-black p-6 shadow"
+        className="bg-white text-black shadow"
         style={{
           width: "100%",
-          maxWidth: "900px", // ✅ SCREEN FIT FIX
-          margin: "auto"
+          maxWidth: "800px",   // ✅ SCREEN FIT FIX
+          margin: "auto",
+          padding: "20px"
         }}
       >
 
