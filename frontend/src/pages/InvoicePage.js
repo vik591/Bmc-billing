@@ -37,19 +37,17 @@ export const InvoicePage = () => {
 
   const handlePrint = () => window.print();
 
-  // ✅ FINAL WORKING DOWNLOAD (APP + BROWSER)
+  // 🔥 FINAL PDF (APP + BROWSER)
   const handleDownloadPDF = async () => {
     try {
       const element = invoiceRef.current;
 
-      // wait for render
       await new Promise(res => setTimeout(res, 500));
 
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
-        windowWidth: element.scrollWidth,
       });
 
       const imgData = canvas.toDataURL("image/jpeg", 1.0);
@@ -61,7 +59,7 @@ export const InvoicePage = () => {
 
       pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
 
-      // 🔥 FILE NAME FIX
+      // 🔥 filename
       const name = bill.customer_name
         ? bill.customer_name.trim().toLowerCase().replace(/\s+/g, "_")
         : "customer";
@@ -72,22 +70,20 @@ export const InvoicePage = () => {
 
       const fileName = `${name}_${invoice}.pdf`;
 
-      // 🔥 KEY FIX FOR APP DOWNLOAD
       const blob = pdf.output("blob");
       const url = URL.createObjectURL(blob);
 
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      a.click();
+      const newWindow = window.open(url, "_blank");
 
-      URL.revokeObjectURL(url);
+      if (!newWindow) {
+        alert("Allow popup to download PDF");
+      }
 
-      toast.success("PDF Downloaded");
+      toast.success("PDF opened → Save manually");
 
     } catch (err) {
       console.log(err);
-      toast.error("Download failed");
+      toast.error("PDF failed");
     }
   };
 
@@ -205,7 +201,7 @@ export const InvoicePage = () => {
           </div>
         </div>
 
-        {/* SIGN */}
+        {/* SIGNATURE */}
         <div className="mt-10 flex justify-between">
           <div className="text-center">
             <div className="border-t w-40 mx-auto mb-1"></div>
