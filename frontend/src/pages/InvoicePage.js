@@ -37,7 +37,7 @@ export const InvoicePage = () => {
 
   const handlePrint = () => window.print();
 
-  // ✅ PERFECT PDF (NO DISTORTION)
+  // ✅ FIXED PDF (A4 PERFECT SINGLE PAGE)
   const handleDownloadPDF = async () => {
     try {
       const element = invoiceRef.current;
@@ -45,7 +45,7 @@ export const InvoicePage = () => {
       await new Promise(res => setTimeout(res, 500));
 
       const canvas = await html2canvas(element, {
-        scale: 3, // 🔥 HIGH QUALITY
+        scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff"
       });
@@ -57,13 +57,19 @@ export const InvoicePage = () => {
       const pageWidth = 210;
       const pageHeight = 297;
 
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      // 🔥 MAIN FIX (NO CUT / NO 2 PAGE)
+      const ratio = Math.min(
+        pageWidth / canvas.width,
+        pageHeight / canvas.height
+      );
 
-      // 🔥 CENTER FIT (NO STRETCH)
-      const y = imgHeight > pageHeight ? 0 : (pageHeight - imgHeight) / 2;
+      const imgWidth = canvas.width * ratio;
+      const imgHeight = canvas.height * ratio;
 
-      pdf.addImage(imgData, "JPEG", 0, y, imgWidth, imgHeight);
+      const x = (pageWidth - imgWidth) / 2;
+      const y = (pageHeight - imgHeight) / 2;
+
+      pdf.addImage(imgData, "JPEG", x, y, imgWidth, imgHeight);
 
       const name = bill.customer_name
         ? bill.customer_name.trim().toLowerCase().replace(/\s+/g, "_")
@@ -92,7 +98,7 @@ export const InvoicePage = () => {
   if (!bill) return <div className="p-10">No data</div>;
 
   return (
-    <div className="bg-gray-100 p-3">
+    <div className="bg-gray-100 p-4">
 
       {/* BUTTONS */}
       <div className="max-w-4xl mx-auto mb-4 flex gap-2">
@@ -107,7 +113,7 @@ export const InvoicePage = () => {
         className="bg-white text-black shadow"
         style={{
           width: "100%",
-          maxWidth: "800px", // ✅ SCREEN FIX
+          maxWidth: "900px", // 🔥 FIX (screen fit)
           margin: "auto",
           padding: "20px"
         }}
