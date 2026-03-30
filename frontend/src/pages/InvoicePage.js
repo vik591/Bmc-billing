@@ -37,16 +37,19 @@ export const InvoicePage = () => {
 
   const handlePrint = () => window.print();
 
-  // ✅ FIXED PDF DOWNLOAD
+  // ✅ FINAL WORKING DOWNLOAD (APP + BROWSER)
   const handleDownloadPDF = async () => {
     try {
       const element = invoiceRef.current;
 
+      // wait for render
+      await new Promise(res => setTimeout(res, 500));
+
       const canvas = await html2canvas(element, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
-        scrollY: -window.scrollY,
+        windowWidth: element.scrollWidth,
       });
 
       const imgData = canvas.toDataURL("image/jpeg", 1.0);
@@ -58,16 +61,36 @@ export const InvoicePage = () => {
 
       pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
 
-      pdf.save(`Invoice-${bill.invoice_number}.pdf`);
+      // 🔥 FILE NAME FIX
+      const name = bill.customer_name
+        ? bill.customer_name.trim().toLowerCase().replace(/\s+/g, "_")
+        : "customer";
+
+      const invoice = bill.invoice_number
+        ? bill.invoice_number.replace("INV", "BMC")
+        : "bill";
+
+      const fileName = `${name}_${invoice}.pdf`;
+
+      // 🔥 KEY FIX FOR APP DOWNLOAD
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+
+      URL.revokeObjectURL(url);
 
       toast.success("PDF Downloaded");
+
     } catch (err) {
       console.log(err);
-      toast.error("PDF Failed");
+      toast.error("Download failed");
     }
   };
 
-  // ⚠️ WhatsApp (link share only possible in web)
   const handleShareWhatsApp = () => {
     const url = `${window.location.origin}/invoice/${bill.id}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(url)}`);
@@ -107,7 +130,7 @@ export const InvoicePage = () => {
 
           <div className="text-right">
             <h2 className="text-xl font-bold">INVOICE</h2>
-            <p>No: {bill.invoice_number}</p>
+            <p>No: {bill.invoice_number?.replace("INV", "BMC")}</p>
             <p>{new Date(bill.created_at).toLocaleDateString()}</p>
           </div>
         </div>
@@ -115,7 +138,7 @@ export const InvoicePage = () => {
         {/* CUSTOMER */}
         <div className="mb-4">
           <h3 className="font-semibold">Bill To:</h3>
-          <p>{bill.customer_name || "Walk-in"}</p>
+          <p>{bill.customer_name || "Walk-in Customer"}</p>
           <p>{bill.customer_phone}</p>
         </div>
 
@@ -136,7 +159,6 @@ export const InvoicePage = () => {
                 <td className="border p-2">
                   {item.product_name}
 
-                  {/* ✅ IMEI SHOW */}
                   {(item.imei1 || item.imei2) && (
                     <div className="text-xs text-gray-500 mt-1">
                       {item.imei1 && <div>IMEI1: {item.imei1}</div>}
@@ -206,9 +228,9 @@ export const InvoicePage = () => {
           <ul className="list-disc pl-4 space-y-1">
             <li>Goods once sold will not be taken back or exchanged.</li>
             <li>No warranty on physical damage.</li>
-            <li>Keep invoice safe for warranty.</li>
-            <li>Warranty as per brand policy.</li>
-            <li>Subject to Bhopal jurisdiction.</li>
+            <li>Please keep invoice safe for warranty claims.</li>
+            <li>Warranty as per brand/service center policy.</li>
+            <li>All disputes subject to Bhopal jurisdiction.</li>
           </ul>
         </div>
 
