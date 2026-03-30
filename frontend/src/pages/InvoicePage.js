@@ -37,31 +37,45 @@ export const InvoicePage = () => {
 
   const handlePrint = () => window.print();
 
-  // ✅ FINAL WORKING DOWNLOAD (APP + BROWSER)
+  // ✅ A4 PERFECT PDF FIX
   const handleDownloadPDF = async () => {
     try {
       const element = invoiceRef.current;
 
-      // wait for render
       await new Promise(res => setTimeout(res, 500));
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         backgroundColor: "#ffffff",
-        windowWidth: element.scrollWidth,
       });
 
       const imgData = canvas.toDataURL("image/jpeg", 1.0);
 
       const pdf = new jsPDF("p", "mm", "a4");
 
-      const imgWidth = 210;
+      const pageWidth = 210;
+      const pageHeight = 297;
+
+      const imgWidth = pageWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
+      let position = 0;
 
-      // 🔥 FILE NAME FIX
+      if (imgHeight <= pageHeight) {
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      } else {
+        let heightLeft = imgHeight;
+
+        while (heightLeft > 0) {
+          pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+          position -= pageHeight;
+
+          if (heightLeft > 0) pdf.addPage();
+        }
+      }
+
       const name = bill.customer_name
         ? bill.customer_name.trim().toLowerCase().replace(/\s+/g, "_")
         : "customer";
@@ -70,20 +84,7 @@ export const InvoicePage = () => {
         ? bill.invoice_number.replace("INV", "BMC")
         : "bill";
 
-      const fileName = `${name}_${invoice}.pdf`;
-
-      // 🔥 KEY FIX FOR APP DOWNLOAD
-      const blob = pdf.output("blob");
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      a.click();
-
-      URL.revokeObjectURL(url);
-
-      toast.success("PDF Downloaded");
+      pdf.save(`${name}_${invoice}.pdf`);
 
     } catch (err) {
       console.log(err);
@@ -113,7 +114,11 @@ export const InvoicePage = () => {
       <div
         ref={invoiceRef}
         className="bg-white text-black p-6 shadow"
-        style={{ width: "100%", maxWidth: "210mm", margin: "auto" }}
+        style={{
+          width: "100%",
+          maxWidth: "900px", // ✅ SCREEN FIT FIX
+          margin: "auto"
+        }}
       >
 
         {/* HEADER */}
