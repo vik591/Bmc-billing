@@ -37,7 +37,7 @@ export const InvoicePage = () => {
 
   const handlePrint = () => window.print();
 
-  // ✅ FIXED PDF (1 PAGE A4)
+  // ✅ PERFECT PDF (NO DISTORTION)
   const handleDownloadPDF = async () => {
     try {
       const element = invoiceRef.current;
@@ -45,7 +45,7 @@ export const InvoicePage = () => {
       await new Promise(res => setTimeout(res, 500));
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3, // 🔥 HIGH QUALITY
         useCORS: true,
         backgroundColor: "#ffffff"
       });
@@ -54,18 +54,16 @@ export const InvoicePage = () => {
 
       const pdf = new jsPDF("p", "mm", "a4");
 
-      const pdfWidth = 210;
-      const pdfHeight = 297;
+      const pageWidth = 210;
+      const pageHeight = 297;
 
-      const imgWidth = pdfWidth;
-      let imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      // 🔥 MAIN FIX: force single page
-      if (imgHeight > pdfHeight) {
-        imgHeight = pdfHeight;
-      }
+      // 🔥 CENTER FIT (NO STRETCH)
+      const y = imgHeight > pageHeight ? 0 : (pageHeight - imgHeight) / 2;
 
-      pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, "JPEG", 0, y, imgWidth, imgHeight);
 
       const name = bill.customer_name
         ? bill.customer_name.trim().toLowerCase().replace(/\s+/g, "_")
@@ -94,7 +92,7 @@ export const InvoicePage = () => {
   if (!bill) return <div className="p-10">No data</div>;
 
   return (
-    <div className="bg-gray-100 p-4">
+    <div className="bg-gray-100 p-3">
 
       {/* BUTTONS */}
       <div className="max-w-4xl mx-auto mb-4 flex gap-2">
@@ -109,7 +107,7 @@ export const InvoicePage = () => {
         className="bg-white text-black shadow"
         style={{
           width: "100%",
-          maxWidth: "800px",   // ✅ SCREEN FIT FIX
+          maxWidth: "800px", // ✅ SCREEN FIX
           margin: "auto",
           padding: "20px"
         }}
